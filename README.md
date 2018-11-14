@@ -2,7 +2,7 @@
  
 ## For FPGA Toolchain Users
 
-Project Tang enables a fully open-source flow for ECP5 FPGAs using [Yosys](https://github.com/YosysHQ/yosys)
+Project Tang enables a fully open-source flow for Anlogic FPGAs using [Yosys](https://github.com/YosysHQ/yosys)
 for Verilog synthesis and [nextpnr](https://github.com/YosysHQ/nextpnr) for place and route.
 Project Tang itself provides the device database and tools for bitstream creation.
 
