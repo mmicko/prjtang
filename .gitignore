@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+/user_environment.sh
+ispTcl.log
+ispTcl.log.*
+ispTcl.tcl
+ispTcl.tcl.*
+.ispTcl.lock
+work_*/
