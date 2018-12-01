@@ -60,3 +60,5 @@ def get_devices():
     with open(djson, "r") as f:
         return json.load(f)
 
+def get_db_commit():
+    return subprocess.getoutput('git -C "{}" rev-parse HEAD'.format(get_db_root()))
