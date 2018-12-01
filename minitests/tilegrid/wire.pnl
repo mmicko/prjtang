@@ -1,0 +1,17 @@
+design "top"
+{
+	device
+	{
+		part {part};
+		architecture {architecture};
+		package {package};
+		speed ;
+	}
+	net "test"
+	{
+		route
+		{
+			{tiles}
+		}
+	}
+}

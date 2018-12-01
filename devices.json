@@ -1,0 +1,117 @@
+{
+    "architectures": {
+        "eagle": {
+            "parts": {
+                "eagle_15": {
+                    "packages": [
+                        "BGA256X",
+                        "BGA256A"
+                    ],
+                    "max_row": 41,
+                    "max_col": 72
+                },
+                "eagle_20": {
+                    "packages": [
+                        "BGA256X",
+                        "BGA256A",
+                        "QFN88"
+                    ],
+                    "max_row": 41,
+                    "max_col": 72
+                },
+                "eagle_s20": {
+                    "packages": [
+                        "EQFP176",
+                        "BG256",
+                        "QFN88"
+                    ],
+                    "max_row": 41,
+                    "max_col": 72
+                }
+            }
+        },
+        "elf": {
+            "parts": {
+                "elf_3": {
+                    "packages": [
+                        "LXLQFP100",
+                        "AMLQFP100",
+                        "AMLQFP44"
+                    ],
+                    "max_row": 10,
+                    "max_col": 9
+                },
+                "elf_6": {
+                    "packages": [
+                        "LXLQFP100",
+                        "LXLQFP144",
+                        "AMLQFP100",
+                        "AMLQFP144"
+                    ],
+                    "max_row": 10,
+                    "max_col": 9
+                }
+            }
+        },
+        "ef2": {
+            "parts": {
+                "ef2_1": {
+                    "packages": [
+                        "EF2L15LG100B",
+                        "EF2L15LG144B",
+                        "EF2L15BG256B"
+                    ],
+                    "max_row": 25,
+                    "max_col": 30
+                },
+                "ef2_2": {
+                    "packages": [
+                        "EF2L25XG42B",
+                        "EF2L25BG256B"
+                    ],
+                    "max_row": 25,
+                    "max_col": 30
+                },
+                "ef2_4": {
+                    "packages": [
+                        "EF2L45LG144B",
+                        "EF2M45LG64B",
+                        "EF2L45BG256B",
+                        "EF2M45LG48B"
+                    ],
+                    "max_row": 25,
+                    "max_col": 30
+                }
+            }
+        },
+        "al3": {
+            "parts": {
+                "al3_6": {
+                    "packages": [
+                        "LQFP144",
+                        "BGA256"
+                    ],
+                    "max_row": 35,
+                    "max_col": 38
+                },
+                "al3_10": {
+                    "packages": [
+                        "LQFP144",
+                        "BGA256",
+                        "QFN88"
+                    ],
+                    "max_row": 35,
+                    "max_col": 38
+                },
+                "al3_s10": {
+                    "packages": [
+                        "LQFP144",
+                        "QFN88"
+                    ],
+                    "max_row": 35,
+                    "max_col": 38
+                }
+            }
+        }
+    }
+}

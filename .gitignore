@@ -7,3 +7,5 @@ ispTcl.tcl
 ispTcl.tcl.*
 .ispTcl.lock
 work_*/
+/td/
+/database/
