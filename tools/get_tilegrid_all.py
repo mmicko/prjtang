@@ -11,10 +11,9 @@ import database
 import tangdinasty
 import json
 
-def prepare_tcl(part, package):
-	file_loc = path.join(database.get_tang_root(), "minitests", "tilegrid", "wire.tcl")
+def prepare_tcl(file_loc, out_file, part, package):
 	with open(file_loc, "rt") as fin:
-		with open("work_tilegrid/wire.tcl", "wt") as fout:
+		with open(out_file, "wt") as fout:
 			for line in fin:
 				line = line.replace('{part}', part)
 				line = line.replace('{package}', package)
@@ -35,8 +34,7 @@ def prepare_pnl(architecture, part, package, max_row, max_col):
 				line = line.replace('{tiles}', tiles)
 				fout.write(line)
 
-def write_json(infile ,outfile, rows, cols):
-	tiles = [[0 for x in range(rows)] for y in range(cols)] 
+def extract_elements(infile, tiles):
 	with open(infile, "rt") as fin:
 		for line in fin:				
 			if (line.startswith('//')):
@@ -62,10 +60,12 @@ def write_json(infile ,outfile, rows, cols):
 					"wl_beg": int(wl_beg),
 					"bl_beg": int(bl_beg)
 				}
-				size = len(tiles[y][x]["val"])
-				tiles[y][x]["val"].append(current_item)
-	with open(outfile, "wt") as fout:
-		json.dump(tiles, fout, sort_keys=True, indent=4)
+				found = False
+				for item in tiles[y][x]["val"]:
+					if(item["inst"]==inst):
+						found = True
+				if found==False:
+					tiles[y][x]["val"].append(current_item)
 	
 def main():
 	shutil.rmtree("work_tilegrid", ignore_errors=True)
@@ -75,11 +75,23 @@ def main():
 		for part in devices["architectures"][architecture]["parts"].keys():
 			selected_part = devices["architectures"][architecture]["parts"][part]
 			package = selected_part["packages"][0]
-			prepare_tcl(part, package)
+
+			prepare_tcl(path.join(database.get_tang_root(), "minitests", "tilegrid", "wire.tcl"), "work_tilegrid/wire.tcl", part, package)
 			prepare_pnl(architecture, part, package, int(selected_part["max_row"]), int(selected_part["max_col"]))
 			tangdinasty.run("wire.tcl", "work_tilegrid")
+			tiles = [[0 for x in range(int(selected_part["max_row"]),)] for y in range(int(selected_part["max_col"]))] 
+			extract_elements("work_tilegrid/wire.log", tiles)
+
+			file_loc = path.join(database.get_tang_root(), "minitests", "tilegrid", part + ".v")
+			if os.path.exists(file_loc):
+				shutil.copyfile(file_loc,path.join("work_tilegrid", part + ".v"))
+				prepare_tcl(path.join(database.get_tang_root(), "minitests", "tilegrid", "specific.tcl"), "work_tilegrid/specific.tcl", part, package)
+				tangdinasty.run("specific.tcl", "work_tilegrid")
+				extract_elements("work_tilegrid/" + part + ".log", tiles)
+
 			output_file = path.join(database.get_db_subdir(architecture, part), "tilegrid.json")
-			write_json("work_tilegrid/wire.log", output_file, int(selected_part["max_row"]), int(selected_part["max_col"]))
+			with open(output_file, "wt") as fout:
+				json.dump(tiles, fout, sort_keys=True, indent=4)
 
 if __name__ == "__main__":
 	main()
