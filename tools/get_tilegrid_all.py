@@ -68,11 +68,11 @@ def extract_elements(infile, tiles, max_row):
 					tiles[y][x]["val"].append(current_item)
 	
 def main():
-	shutil.rmtree("work_tilegrid", ignore_errors=True)
-	os.mkdir("work_tilegrid")
 	devices = database.get_devices()
 	for architecture in devices["architectures"].keys():
 		for part in devices["architectures"][architecture]["parts"].keys():
+			shutil.rmtree("work_tilegrid", ignore_errors=True)
+			os.mkdir("work_tilegrid")
 			selected_part = devices["architectures"][architecture]["parts"][part]
 			package = selected_part["packages"][0]
 
