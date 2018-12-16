@@ -21,8 +21,8 @@ def prepare_tcl(file_loc, out_file, part, package):
 
 def prepare_pnl(architecture, part, package, max_row, max_col):
 	tiles = ''
-	for x in range(max_row):
-		for y in range(max_col):
+	for x in range(max_col):
+		for y in range(max_row):
 			tiles += '          x{}y{}_n1end0.x{}y{}_n1beg0\n'.format(x,y,x,y)      
 	file_loc = path.join(database.get_tang_root(), "minitests", "tilegrid", "wire.pnl")
 	with open(file_loc, "rt") as fin:
@@ -34,7 +34,7 @@ def prepare_pnl(architecture, part, package, max_row, max_col):
 				line = line.replace('{tiles}', tiles)
 				fout.write(line)
 
-def extract_elements(infile, tiles):
+def extract_elements(infile, tiles, max_row):
 	with open(infile, "rt") as fin:
 		for line in fin:				
 			if (line.startswith('//')):
@@ -45,7 +45,7 @@ def extract_elements(infile, tiles):
 				loc = inst.split('_')[-1]
 				val = loc.split('y')
 				x = int(val[0].lstrip('x'))
-				y = int(val[1])
+				y = max_row - 1 - int(val[1])
 				current_tile = {
 					"x": x,
 					"y": y,
@@ -76,18 +76,21 @@ def main():
 			selected_part = devices["architectures"][architecture]["parts"][part]
 			package = selected_part["packages"][0]
 
-			prepare_tcl(path.join(database.get_tang_root(), "minitests", "tilegrid", "wire.tcl"), "work_tilegrid/wire.tcl", part, package)
-			prepare_pnl(architecture, part, package, int(selected_part["max_row"]), int(selected_part["max_col"]))
-			tangdinasty.run("wire.tcl", "work_tilegrid")
-			tiles = [[0 for x in range(int(selected_part["max_row"]),)] for y in range(int(selected_part["max_col"]))] 
-			extract_elements("work_tilegrid/wire.log", tiles)
+			max_row = int(selected_part["max_row"])
+			max_col = int(selected_part["max_col"])
 
+			prepare_tcl(path.join(database.get_tang_root(), "minitests", "tilegrid", "wire.tcl"), "work_tilegrid/wire.tcl", part, package)
+			prepare_pnl(architecture, part, package, max_row, max_col)
+			tangdinasty.run("wire.tcl", "work_tilegrid")
+			tiles = [[0 for y in range(max_col)] for x in range(max_row)] 
+			extract_elements("work_tilegrid/wire.log", tiles, max_row)
+			
 			file_loc = path.join(database.get_tang_root(), "minitests", "tilegrid", part + ".v")
 			if os.path.exists(file_loc):
 				shutil.copyfile(file_loc,path.join("work_tilegrid", part + ".v"))
 				prepare_tcl(path.join(database.get_tang_root(), "minitests", "tilegrid", "specific.tcl"), "work_tilegrid/specific.tcl", part, package)
 				tangdinasty.run("specific.tcl", "work_tilegrid")
-				extract_elements("work_tilegrid/" + part + ".log", tiles)
+				extract_elements("work_tilegrid/" + part + ".log", tiles, max_row)
 
 			output_file = path.join(database.get_db_subdir(architecture, part), "tilegrid.json")
 			with open(output_file, "wt") as fout:

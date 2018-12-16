@@ -47,9 +47,9 @@ def main(argv):
 	max_col = device_info["max_col"]
 	tiles = []
 	
-	for i in range(max_col ):
+	for i in range(max_row ):
 		row = []
-		for j in range(max_row):
+		for j in range(max_col):
 			row.append([])
 		tiles.append(row)
 
