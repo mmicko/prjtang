@@ -20,3 +20,12 @@ target_link_libraries(tang LINK_PUBLIC ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_IN
 add_executable(tangbit ${INCLUDE_FILES} tools/tangbit.cpp)
 target_link_libraries(tangbit tang ${Boost_LIBRARIES})
 
+file(GLOB_RECURSE CLANGFORMAT_FILES *.cpp *.hpp)
+
+add_custom_target(
+    clangformat
+    COMMAND clang-format
+    -style=file
+    -i
+    ${CLANGFORMAT_FILES}
+)
