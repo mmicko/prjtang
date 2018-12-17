@@ -39,9 +39,42 @@ Bitstream Bitstream::read(std::istream &in)
 	return Bitstream(bytes, meta);
 }
 
+std::string Bitstream::vector_to_string(const std::vector<uint8_t> &data)
+{
+    std::ostringstream os;
+    for(size_t i=0;i<data.size();i++) {    
+        os << std::hex << std::setw(2) << std::setfill('0') << int(data[i]);
+    }
+    return os.str();    
+}
+
+void Bitstream::parse_command(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data, const uint16_t crc16)
+{    
+    switch(command) {
+        case 0xf0 : // JTAG ID
+                    printf("0xf0 DEVICEID:%s\n",vector_to_string(data).c_str());
+                    break;            
+        case 0xf1 : 
+        case 0xf3 :
+        case 0xf7 :
+        case 0xc1 :
+        case 0xc2 :
+        case 0xc3 :
+        case 0xc5 :
+        case 0xc7 :
+        case 0xc8 :
+        case 0xca :
+                    printf("0x%02x [%04x] [crc %04x]:%s \n",command, size, crc16, vector_to_string(data).c_str());
+                    break;            
+        default :
+                    std::ostringstream os;
+                    os << "Unknown command in bitstream " << std::hex << std::setw(2) << std::setfill('0') << int(command);
+                    throw BitstreamParseError(os.str());
+    }
+}
+
 void Bitstream::parse_block(const std::vector<uint8_t> &data)
 {    
-    printf("%02x\n",data[0]);
     switch(data[0]) {
         case 0xff : // all 0xff header
                     break;
@@ -50,7 +83,7 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
                     }
                     break;
         case 0xec : if (data[1]==0xf0)  {
-                        printf("blocks %02x%02x\n",data[2],data[3]);
+                        //printf("blocks %02x%02x\n",data[2],data[3]);
                         data_blocks = (data[2] << 8) + data[3] + 1;
                     }
                     break;
@@ -68,13 +101,17 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
                     {
                         uint8_t flags = data[1];
                         uint16_t size = (data[2] << 8) + data[3];
-                        printf("%04x\n",size);
+                        uint16_t crc16 = (data[4+size-2] << 8) + data[4+size-1];
+                        if (flags!=0) 
+                            throw BitstreamParseError("Byte after command should be zero");
+                        parse_command(data[0], size, std::vector<uint8_t>(data.begin() + 4, data.begin() + 4 + size - 2), crc16);
+                        
+                        /*printf("%04x\n",size);
                         for(size_t i=4;i<4+size-2;i++) {
                             printf("%02x",data[i]);
                         }
-                        printf("\n");
-                        uint16_t crc16 = (data[4+size-2] << 8) + data[4+size-1];
-                        printf("%04x\n",crc16);
+                        printf("\n");                        
+                        printf("%04x\n",crc16);*/
                     }
                     break;
         default : break;

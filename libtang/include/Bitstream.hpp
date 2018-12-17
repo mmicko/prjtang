@@ -16,9 +16,12 @@ public:
 	
 	void parse();
     void parse_block(const std::vector<uint8_t> &data);
+    void parse_command(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data, const uint16_t crc16);
 private:
 	Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
 	
+    std::string vector_to_string(const std::vector<uint8_t> &data);
+
     uint16_t data_blocks;
     // Raw bitstream data
     std::vector<uint8_t> data;
