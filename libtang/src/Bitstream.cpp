@@ -48,6 +48,10 @@ std::string Bitstream::vector_to_string(const std::vector<uint8_t> &data)
     return os.str();
 }
 
+#define BIN(byte)                                                                                                      \
+    (byte & 0x80 ? '1' : '0'), (byte & 0x40 ? '1' : '0'), (byte & 0x20 ? '1' : '0'), (byte & 0x10 ? '1' : '0'),        \
+            (byte & 0x08 ? '1' : '0'), (byte & 0x04 ? '1' : '0'), (byte & 0x02 ? '1' : '0'), (byte & 0x01 ? '1' : '0')
+
 void Bitstream::parse_command(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
                               const uint16_t crc16)
 {
@@ -55,14 +59,23 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
     case 0xf0: // JTAG ID
         printf("0xf0 DEVICEID:%s\n", vector_to_string(data).c_str());
         break;
+    case 0xc1:
+        printf("0xc1 VERSION:%02x UCODE:00000000%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", data[0],
+               BIN(data[1]), BIN(data[2]), BIN(data[3]));
+        break;
+    case 0xc7:
+        printf("0xc7 ROWS:%d BYTES_PER_ROW:%d (%d bits)\n", (data[0] * 256 + data[1]), (data[2] * 256 + data[3]),
+               (data[2] * 256 + data[3]) * 8);
+        break;
+
     case 0xf1:
     case 0xf3:
     case 0xf7:
-    case 0xc1:
+
     case 0xc2:
     case 0xc3:
+    case 0xc4:
     case 0xc5:
-    case 0xc7:
     case 0xc8:
     case 0xca:
         printf("0x%02x [%04x] [crc %04x]:%s \n", command, size, crc16, vector_to_string(data).c_str());
@@ -76,6 +89,7 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
 
 void Bitstream::parse_block(const std::vector<uint8_t> &data)
 {
+    // printf("block:%s\n", vector_to_string(data).c_str());
     switch (data[0]) {
     case 0xff: // all 0xff header
         break;
@@ -90,6 +104,12 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
             data_blocks = (data[2] << 8) + data[3] + 1;
         }
         break;
+    case 0xaa:
+        if (data[1] == 0x00) {
+            // printf("blocks %02x%02x\n",data[2],data[3]);
+            data_blocks = (data[2] << 8) + data[3];
+        }
+        break;
     case 0xf0:
     case 0xf1:
     case 0xf3:
@@ -97,6 +117,7 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     case 0xc1:
     case 0xc2:
     case 0xc3:
+    case 0xc4:
     case 0xc5:
     case 0xc7:
     case 0xc8:
