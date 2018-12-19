@@ -67,6 +67,21 @@ def extract_elements(infile, tiles, max_row):
 				if found==False:
 					tiles[y][x]["val"].append(current_item)
 	
+def extract_fuses(infile, architecture, part):
+	rows = 0
+	cols = 0
+	with open(infile, "rt") as fin:
+		for line in fin:
+			rows = rows + 1
+			cols = len(line.strip())
+	data = {}
+	data["rows"] = rows
+	data["cols"] = cols
+	output_file = path.join(database.get_db_subdir(architecture, part), "fuses.json")
+	with open(output_file, "wt") as fout:
+		json.dump(data, fout, sort_keys=True, indent=4)
+
+
 def main():
 	devices = database.get_devices()
 	for architecture in devices["architectures"].keys():
@@ -95,6 +110,7 @@ def main():
 			output_file = path.join(database.get_db_subdir(architecture, part), "tilegrid.json")
 			with open(output_file, "wt") as fout:
 				json.dump(tiles, fout, sort_keys=True, indent=4)
+			extract_fuses("work_tilegrid/wire.fuse", architecture, part)
 
 if __name__ == "__main__":
 	main()
