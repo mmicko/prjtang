@@ -63,6 +63,16 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
         printf("0xc1 VERSION:%02x UCODE:00000000%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", data[0],
                BIN(data[1]), BIN(data[2]), BIN(data[3]));
         break;
+    case 0xc2:
+        printf("0xc2 hswapen %c mclk_freq_div %c%c%c%c%c unk %c%c active_done %c unk %c%c%c cascade_mode %c%c security "
+               "%c unk %c auto_clear_en %c unk %c%c persist_bit %c UNK %c%c%c%c%c%c%c%c%c%c%c close_osc %c\n",
+               BIN(data[0]), BIN(data[1]), BIN(data[2]), BIN(data[3]));
+        break;
+    case 0xc3:
+        printf("0xc3 UNK %c%c%c%c%c PLL %c%c%c%c unk %c%c%c done_sync %c pll_lock_wait %c%c%c%c done_phase %c%c%c "
+               "goe_phase %c%c%c gsr_phase %c%c%c gwd_phase %c%c%c usr_gsrn_en %c gsrn_sync_sel %c  UNK %c\n",
+               BIN(data[0]), BIN(data[1]), BIN(data[2]), BIN(data[3]));
+        break;
     case 0xc7:
         printf("0xc7 ROWS:%d BYTES_PER_ROW:%d (%d bits)\n", (data[0] * 256 + data[1]), (data[2] * 256 + data[3]),
                (data[2] * 256 + data[3]) * 8);
@@ -72,8 +82,6 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
     case 0xf3:
     case 0xf7:
 
-    case 0xc2:
-    case 0xc3:
     case 0xc4:
     case 0xc5:
     case 0xc8:
