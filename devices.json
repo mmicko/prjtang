@@ -97,8 +97,7 @@
                 "al3_10": {
                     "packages": [
                         "LQFP144",
-                        "BGA256",
-                        "QFN88"
+                        "BGA256"
                     ],
                     "max_col": 35,
                     "max_row": 38
