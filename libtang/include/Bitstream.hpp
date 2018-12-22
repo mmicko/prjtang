@@ -19,6 +19,8 @@ class Bitstream
     void parse_block(const std::vector<uint8_t> &data);
     void parse_command(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
                        const uint16_t crc16);
+    void parse_command_cpld(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
+                            const uint16_t crc16);
 
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
@@ -28,8 +30,10 @@ class Bitstream
     uint16_t data_blocks;
     // Raw bitstream data
     std::vector<uint8_t> data;
-    // Lattice BIT file metadata
+    // BIT file metadata
     std::vector<std::string> metadata;
+    // status if bitstream is from CPLD
+    bool cpld;
 };
 
 class BitstreamParseError : std::runtime_error

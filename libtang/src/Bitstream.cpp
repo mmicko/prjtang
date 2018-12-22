@@ -4,7 +4,7 @@
 namespace Tang {
 
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
-        : data(data), metadata(metadata)
+        : data(data), metadata(metadata), cpld(false)
 {
 }
 
@@ -95,10 +95,34 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
     }
 }
 
+void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
+                                   const uint16_t crc16)
+{
+    switch (command) {
+    case 0x90: // JTAG ID
+        cpld = true;
+        printf("0x90 DEVICEID:%s\n", vector_to_string(std::vector<uint8_t>(data.begin() + 3, data.end())).c_str());
+        break;
+    case 0xa1:
+    case 0xa3:
+    case 0xa8:
+    case 0xac:
+    case 0xb1:
+    case 0xc4:
+        printf("0x%02x [%04x] [crc %04x]:%s \n", command, size, crc16, vector_to_string(data).c_str());
+        break;
+    default:
+        std::ostringstream os;
+        os << "Unknown command in bitstream " << std::hex << std::setw(2) << std::setfill('0') << int(command);
+        throw BitstreamParseError(os.str());
+    }
+}
+
 void Bitstream::parse_block(const std::vector<uint8_t> &data)
 {
     // printf("block:%s\n", vector_to_string(data).c_str());
     switch (data[0]) {
+    // Common section
     case 0xff: // all 0xff header
         break;
     case 0xcc:
@@ -106,16 +130,44 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
             // proper header
         }
         break;
-    case 0xec:
-        if (data[1] == 0xf0) {
-            // printf("blocks %02x%02x\n",data[2],data[3]);
-            data_blocks = (data[2] << 8) + data[3] + 1;
+
+    case 0xc4: {
+        if (cpld) {
+            uint16_t size = data.size() - 3;
+            uint16_t crc16 = (data[data.size() - 2] << 8) + data[data.size() - 1];
+            parse_command_cpld(data[0], size, std::vector<uint8_t>(data.begin() + 1, data.begin() + 1 + size), crc16);
+        } else {
+            uint8_t flags = data[1];
+            uint16_t size = (data[2] << 8) + data[3];
+            uint16_t crc16 = (data[4 + size - 2] << 8) + data[4 + size - 1];
+            if (flags != 0)
+                throw BitstreamParseError("Byte after command should be zero");
+            parse_command(data[0], size, std::vector<uint8_t>(data.begin() + 4, data.begin() + 4 + size - 2), crc16);
         }
-        break;
+    } break;
+    // CPLD section
     case 0xaa:
         if (data[1] == 0x00) {
             // printf("blocks %02x%02x\n",data[2],data[3]);
             data_blocks = (data[2] << 8) + data[3];
+        }
+        break;
+    case 0xac:
+    case 0xb1:
+    case 0x90:
+    case 0xa1:
+    case 0xa8:
+    case 0xa3: {
+        uint16_t size = data.size() - 3;
+        uint16_t crc16 = (data[data.size() - 2] << 8) + data[data.size() - 1];
+        parse_command_cpld(data[0], size, std::vector<uint8_t>(data.begin() + 1, data.begin() + 1 + size), crc16);
+    } break;
+
+    // FPGA section
+    case 0xec:
+        if (data[1] == 0xf0) {
+            // printf("blocks %02x%02x\n",data[2],data[3]);
+            data_blocks = (data[2] << 8) + data[3] + 1;
         }
         break;
     case 0xf0:
@@ -125,7 +177,6 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     case 0xc1:
     case 0xc2:
     case 0xc3:
-    case 0xc4:
     case 0xc5:
     case 0xc7:
     case 0xc8:
@@ -136,13 +187,6 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
         if (flags != 0)
             throw BitstreamParseError("Byte after command should be zero");
         parse_command(data[0], size, std::vector<uint8_t>(data.begin() + 4, data.begin() + 4 + size - 2), crc16);
-
-        /*printf("%04x\n",size);
-        for(size_t i=4;i<4+size-2;i++) {
-            printf("%02x",data[i]);
-        }
-        printf("\n");
-        printf("%04x\n",crc16);*/
     } break;
     default:
         break;
