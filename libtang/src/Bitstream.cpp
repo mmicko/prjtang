@@ -157,10 +157,14 @@ void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, c
     case 0x90: // JTAG ID
         cpld = true;
         printf("0x90 DEVICEID:%s\n", vector_to_string(std::vector<uint8_t>(data.begin() + 3, data.end())).c_str());
+        row_bytes = 86; // for elf_3/6
+        break;
+    case 0xa8:
+        printf("0xa8 set CRC16 to :%04x\n", (data[2] * 256 + data[3]));
+        crc.reset_crc16(data[2] * 256 + data[3]);
         break;
     case 0xa1:
     case 0xa3:
-    case 0xa8:
     case 0xac:
     case 0xb1:
     case 0xc4:
