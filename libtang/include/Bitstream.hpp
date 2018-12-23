@@ -10,6 +10,20 @@
 
 namespace Tang {
 
+class Crc16
+{
+    static const uint16_t CRC16_POLY = 0x8005;
+    static const uint16_t CRC16_INIT = 0x0000;
+    uint16_t crc16 = CRC16_INIT;
+
+  public:
+    void update_crc16(uint8_t val);
+    uint16_t finalise_crc16();
+    void reset_crc16(uint16_t init = 0x0000);
+    uint16_t calc(const std::vector<uint8_t> &data, int start, int end);
+    uint16_t update_block(const std::vector<uint8_t> &data, int start, int end);
+};
+
 class Bitstream
 {
   public:
@@ -37,6 +51,8 @@ class Bitstream
 
     uint16_t rows;
     uint16_t row_bytes;
+
+    Crc16 crc;
 };
 
 class BitstreamParseError : std::runtime_error

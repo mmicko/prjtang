@@ -3,55 +3,55 @@
 
 namespace Tang {
 
-class Crc16
+// Add a single byte to the running CRC16 accumulator
+void Crc16::update_crc16(uint8_t val)
 {
-    static const uint16_t CRC16_POLY = 0x8005;
-    static const uint16_t CRC16_INIT = 0x0000;
-    uint16_t crc16 = CRC16_INIT;
+    int bit_flag;
+    for (int i = 7; i >= 0; i--) {
+        bit_flag = crc16 >> 15;
 
-  public:
-    // Add a single byte to the running CRC16 accumulator
-    void update_crc16(uint8_t val)
-    {
-        int bit_flag;
-        for (int i = 7; i >= 0; i--) {
-            bit_flag = crc16 >> 15;
+        /* Get next bit: */
+        crc16 <<= 1;
+        crc16 |= (val >> i) & 1; // item a) work from the least significant bits
 
-            /* Get next bit: */
-            crc16 <<= 1;
-            crc16 |= (val >> i) & 1; // item a) work from the least significant bits
+        /* Cycle check: */
+        if (bit_flag)
+            crc16 ^= CRC16_POLY;
+    }
+}
 
-            /* Cycle check: */
-            if (bit_flag)
-                crc16 ^= CRC16_POLY;
-        }
+uint16_t Crc16::finalise_crc16()
+{
+    // item b) "push out" the last 16 bits
+    uint16_t crc = crc16;
+    int i;
+    bool bit_flag;
+    for (i = 0; i < 16; ++i) {
+        bit_flag = bool(crc >> 15);
+        crc <<= 1;
+        if (bit_flag)
+            crc ^= CRC16_POLY;
     }
 
-    uint16_t finalise_crc16()
-    {
-        // item b) "push out" the last 16 bits
-        int i;
-        bool bit_flag;
-        for (i = 0; i < 16; ++i) {
-            bit_flag = bool(crc16 >> 15);
-            crc16 <<= 1;
-            if (bit_flag)
-                crc16 ^= CRC16_POLY;
-        }
+    return crc;
+}
 
-        return crc16;
-    }
+void Crc16::reset_crc16(uint16_t init) { crc16 = init; }
 
-    void reset_crc16() { crc16 = CRC16_INIT; }
+uint16_t Crc16::calc(const std::vector<uint8_t> &data, int start, int end)
+{
+    reset_crc16(CRC16_INIT);
+    for (int i = start; i < end; i++)
+        update_crc16(data[i]);
+    return finalise_crc16();
+}
 
-    uint16_t calc(const std::vector<uint8_t> &data, int start, int end)
-    {
-        reset_crc16();
-        for (int i = start; i < end; i++)
-            update_crc16(data[i]);
-        return finalise_crc16();
-    }
-};
+uint16_t Crc16::update_block(const std::vector<uint8_t> &data, int start, int end)
+{
+    for (int i = start; i < end; i++)
+        update_crc16(data[i]);
+    return finalise_crc16();
+}
 
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
         : data(data), metadata(metadata), cpld(false)
@@ -131,6 +131,9 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
         break;
 
     case 0xf1:
+        printf("0xf1 set CRC16 to :%04x\n", (data[0] * 256 + data[1]));
+        crc.reset_crc16(data[0] * 256 + data[1]);
+        break;
     case 0xf3:
     case 0xf7:
 
@@ -262,6 +265,7 @@ void Bitstream::parse()
 {
     size_t pos = 0;
     data_blocks = 0;
+    crc.reset_crc16();
     do {
         uint16_t len = (data[pos++] << 8);
         len += data[pos++];
@@ -273,9 +277,19 @@ void Bitstream::parse()
 
         std::vector<uint8_t> block = std::vector<uint8_t>(data.begin() + pos, data.begin() + pos + len);
         if (data_blocks == 0) {
+            crc.update_block(block, 0, block.size());
             parse_block(block);
         } else {
             // printf("data:%s\n", vector_to_string(block).c_str());
+            if (row_bytes > block.size()) {
+                crc.update_block(block, 0, block.size());
+            } else {
+                uint16_t crc_calc = crc.update_block(block, 0, row_bytes);
+                uint16_t crc_file = block[row_bytes] * 256 + block[row_bytes + 1];
+                if (crc_calc != crc_file)
+                    throw BitstreamParseError("CRC16 error");
+                crc.update_block(block, row_bytes, block.size());
+            }
             data_blocks--;
         }
 
