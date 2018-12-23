@@ -134,9 +134,10 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
         printf("0xf1 set CRC16 to :%04x\n", (data[0] * 256 + data[1]));
         crc.reset_crc16(data[0] * 256 + data[1]);
         break;
-    case 0xf3:
     case 0xf7:
-
+        printf("0xf7 DONE\n");
+        break;
+    case 0xf3:
     case 0xc4:
     case 0xc5:
     case 0xc8:
