@@ -3,6 +3,56 @@
 
 namespace Tang {
 
+class Crc16
+{
+    static const uint16_t CRC16_POLY = 0x8005;
+    static const uint16_t CRC16_INIT = 0x0000;
+    uint16_t crc16 = CRC16_INIT;
+
+  public:
+    // Add a single byte to the running CRC16 accumulator
+    void update_crc16(uint8_t val)
+    {
+        int bit_flag;
+        for (int i = 7; i >= 0; i--) {
+            bit_flag = crc16 >> 15;
+
+            /* Get next bit: */
+            crc16 <<= 1;
+            crc16 |= (val >> i) & 1; // item a) work from the least significant bits
+
+            /* Cycle check: */
+            if (bit_flag)
+                crc16 ^= CRC16_POLY;
+        }
+    }
+
+    uint16_t finalise_crc16()
+    {
+        // item b) "push out" the last 16 bits
+        int i;
+        bool bit_flag;
+        for (i = 0; i < 16; ++i) {
+            bit_flag = bool(crc16 >> 15);
+            crc16 <<= 1;
+            if (bit_flag)
+                crc16 ^= CRC16_POLY;
+        }
+
+        return crc16;
+    }
+
+    void reset_crc16() { crc16 = CRC16_INIT; }
+
+    uint16_t calc(const std::vector<uint8_t> &data, int start, int end)
+    {
+        reset_crc16();
+        for (int i = start; i < end; i++)
+            update_crc16(data[i]);
+        return finalise_crc16();
+    }
+};
+
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
         : data(data), metadata(metadata), cpld(false)
 {
@@ -76,6 +126,8 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
     case 0xc7:
         printf("0xc7 ROWS:%d BYTES_PER_ROW:%d (%d bits)\n", (data[0] * 256 + data[1]), (data[2] * 256 + data[3]),
                (data[2] * 256 + data[3]) * 8);
+        rows = data[0] * 256 + data[1];
+        row_bytes = data[2] * 256 + data[3];
         break;
 
     case 0xf1:
@@ -120,6 +172,7 @@ void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, c
 
 void Bitstream::parse_block(const std::vector<uint8_t> &data)
 {
+    Crc16 crc;
     // printf("block:%s\n", vector_to_string(data).c_str());
     switch (data[0]) {
     // Common section
@@ -135,11 +188,17 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
         if (cpld) {
             uint16_t size = data.size() - 3;
             uint16_t crc16 = (data[data.size() - 2] << 8) + data[data.size() - 1];
+            uint16_t calc_crc16 = crc.calc(data, 0, data.size() - 2);
+            if (crc16 != calc_crc16)
+                throw BitstreamParseError("CRC16 error");
             parse_command_cpld(data[0], size, std::vector<uint8_t>(data.begin() + 1, data.begin() + 1 + size), crc16);
         } else {
             uint8_t flags = data[1];
             uint16_t size = (data[2] << 8) + data[3];
             uint16_t crc16 = (data[4 + size - 2] << 8) + data[4 + size - 1];
+            uint16_t calc_crc16 = crc.calc(data, 0, data.size() - 2);
+            if (crc16 != calc_crc16)
+                throw BitstreamParseError("CRC16 error");
             if (flags != 0)
                 throw BitstreamParseError("Byte after command should be zero");
             parse_command(data[0], size, std::vector<uint8_t>(data.begin() + 4, data.begin() + 4 + size - 2), crc16);
@@ -160,6 +219,9 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     case 0xa3: {
         uint16_t size = data.size() - 3;
         uint16_t crc16 = (data[data.size() - 2] << 8) + data[data.size() - 1];
+        uint16_t calc_crc16 = crc.calc(data, 0, data.size() - 2);
+        if (crc16 != calc_crc16)
+            throw BitstreamParseError("CRC16 error");
         parse_command_cpld(data[0], size, std::vector<uint8_t>(data.begin() + 1, data.begin() + 1 + size), crc16);
     } break;
 
@@ -184,6 +246,9 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
         uint8_t flags = data[1];
         uint16_t size = (data[2] << 8) + data[3];
         uint16_t crc16 = (data[4 + size - 2] << 8) + data[4 + size - 1];
+        uint16_t calc_crc16 = crc.calc(data, 0, data.size() - 2);
+        if (crc16 != calc_crc16)
+            throw BitstreamParseError("CRC16 error");
         if (flags != 0)
             throw BitstreamParseError("Byte after command should be zero");
         parse_command(data[0], size, std::vector<uint8_t>(data.begin() + 4, data.begin() + 4 + size - 2), crc16);
@@ -206,9 +271,11 @@ void Bitstream::parse()
         if ((pos + len) > data.size())
             throw BitstreamParseError("Invalid data in bitstream");
 
+        std::vector<uint8_t> block = std::vector<uint8_t>(data.begin() + pos, data.begin() + pos + len);
         if (data_blocks == 0) {
-            parse_block(std::vector<uint8_t>(data.begin() + pos, data.begin() + pos + len));
+            parse_block(block);
         } else {
+            // printf("data:%s\n", vector_to_string(block).c_str());
             data_blocks--;
         }
 

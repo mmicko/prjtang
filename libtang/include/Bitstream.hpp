@@ -34,6 +34,9 @@ class Bitstream
     std::vector<std::string> metadata;
     // status if bitstream is from CPLD
     bool cpld;
+
+    uint16_t rows;
+    uint16_t row_bytes;
 };
 
 class BitstreamParseError : std::runtime_error
