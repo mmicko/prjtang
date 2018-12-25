@@ -35,6 +35,7 @@ class Bitstream
                        const uint16_t crc16);
     void parse_command_cpld(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
                             const uint16_t crc16);
+    uint16_t calculate_bitstream_crc();
 
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
