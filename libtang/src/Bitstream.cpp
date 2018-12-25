@@ -302,6 +302,29 @@ void Bitstream::parse()
     } while (pos < data.size());
 }
 
+uint16_t Bitstream::calculate_bitstream_crc()
+{
+    size_t pos = 0;
+    data_blocks = 0;
+    crc.reset_crc16();
+    do {
+        uint16_t len = (data[pos++] << 8);
+        len += data[pos++];
+        if ((len & 7) != 0)
+            throw BitstreamParseError("Invalid size value in bitstream");
+        len >>= 3;
+        if ((pos + len) > data.size())
+            throw BitstreamParseError("Invalid data in bitstream");
+
+        std::vector<uint8_t> block = std::vector<uint8_t>(data.begin() + pos, data.begin() + pos + len);
+        crc.update_block(block, 0, block.size());
+
+        pos += len;
+    } while (pos < data.size());
+
+    return crc.finalise_crc16();
+}
+
 BitstreamParseError::BitstreamParseError(const std::string &desc) : runtime_error(desc.c_str()), desc(desc), offset(-1)
 {
 }
