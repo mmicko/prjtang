@@ -1,6 +1,6 @@
 #include "Bitstream.hpp"
-#include <cstring>
 #include <bitset>
+#include <cstring>
 
 namespace Tang {
 
@@ -238,7 +238,7 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     case 0xec:
         if (data[1] == 0xf0) {
             data_blocks = (data[2] << 8) + data[3] + 1;
-            if (((data[2] << 8) + data[3])==frames)
+            if (((data[2] << 8) + data[3]) == frames)
                 fuse_started = true;
         }
         break;
@@ -331,8 +331,8 @@ uint16_t Bitstream::calculate_bitstream_crc()
 
 void Bitstream::write_fuse(std::ostream &file)
 {
-    for(const auto &frame : fuses) {
-        for(const uint8_t data : frame) {
+    for (const auto &frame : fuses) {
+        for (const uint8_t data : frame) {
             file << std::bitset<8>(data);
         }
         file << std::endl;
@@ -357,4 +357,4 @@ const char *BitstreamParseError::what() const noexcept
         ss << " [at 0x" << std::hex << offset << "]";
     return strdup(ss.str().c_str());
 }
-}
+} // namespace Tang

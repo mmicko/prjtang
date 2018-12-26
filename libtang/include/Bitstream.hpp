@@ -37,6 +37,7 @@ class Bitstream
                             const uint16_t crc16);
     uint16_t calculate_bitstream_crc();
     void write_fuse(std::ostream &file);
+
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
 
@@ -73,5 +74,5 @@ class BitstreamParseError : std::runtime_error
     std::string desc;
     int offset;
 };
-}
+} // namespace Tang
 #endif // LIBTANG_BITSTREAM_HPP

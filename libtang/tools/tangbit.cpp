@@ -52,8 +52,7 @@ int main(int argc, char *argv[])
     try {
         Bitstream bitstream = Bitstream::read(bitstream_file);
         bitstream.parse();
-	    printf("Bitstream CRC calculated: 0x%04x\n",
-	       (unsigned int) bitstream.calculate_bitstream_crc());
+        printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
         if (vm.count("fuse")) {
             ofstream fuse_file(vm["fuse"].as<string>());
             bitstream.write_fuse(fuse_file);
