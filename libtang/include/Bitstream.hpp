@@ -49,10 +49,11 @@ class Bitstream
     std::vector<std::string> metadata;
     // status if bitstream is from CPLD
     bool cpld;
-
-    uint16_t rows;
-    uint16_t row_bytes;
-
+    // Number of frames in bitstream
+    uint16_t frames;
+    // Number of bytes in frame
+    uint16_t frame_bytes;
+    // Crc for current data block (frame)
     Crc16 crc;
 };
 

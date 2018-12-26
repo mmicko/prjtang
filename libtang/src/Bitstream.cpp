@@ -124,10 +124,10 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
                BIN(data[0]), BIN(data[1]), BIN(data[2]), BIN(data[3]));
         break;
     case 0xc7:
-        printf("0xc7 ROWS:%d BYTES_PER_ROW:%d (%d bits)\n", (data[0] * 256 + data[1]), (data[2] * 256 + data[3]),
+        printf("0xc7 FRAMES:%d BYTES_PER_FRAME:%d (%d bits)\n", (data[0] * 256 + data[1]), (data[2] * 256 + data[3]),
                (data[2] * 256 + data[3]) * 8);
-        rows = data[0] * 256 + data[1];
-        row_bytes = data[2] * 256 + data[3];
+        frames = data[0] * 256 + data[1];
+        frame_bytes = data[2] * 256 + data[3];
         break;
 
     case 0xf1:
@@ -158,7 +158,7 @@ void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, c
     case 0x90: // JTAG ID
         cpld = true;
         printf("0x90 DEVICEID:%s\n", vector_to_string(std::vector<uint8_t>(data.begin() + 3, data.end())).c_str());
-        row_bytes = 86; // for elf_3/6
+        frame_bytes = 86; // for elf_3/6
         break;
     case 0xa8:
         printf("0xa8 set CRC16 to :%04x\n", (data[2] * 256 + data[3]));
@@ -286,14 +286,14 @@ void Bitstream::parse()
             parse_block(block);
         } else {
             // printf("data:%s\n", vector_to_string(block).c_str());
-            if (row_bytes > block.size()) {
+            if (frame_bytes > block.size()) {
                 crc.update_block(block, 0, block.size());
             } else {
-                uint16_t crc_calc = crc.update_block(block, 0, row_bytes);
-                uint16_t crc_file = block[row_bytes] * 256 + block[row_bytes + 1];
+                uint16_t crc_calc = crc.update_block(block, 0, frame_bytes);
+                uint16_t crc_file = block[frame_bytes] * 256 + block[frame_bytes + 1];
                 if (crc_calc != crc_file)
                     throw BitstreamParseError("CRC16 error");
-                crc.update_block(block, row_bytes, block.size());
+                crc.update_block(block, frame_bytes, block.size());
             }
             data_blocks--;
         }
