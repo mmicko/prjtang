@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
     try {
         Bitstream bitstream = Bitstream::read(bitstream_file);
         bitstream.parse();
-	/* printf("Bitstream CRC calculated: 0x%04x\n",
-	       (unsigned int) bitstream.calculate_bitstream_crc()); */
+	    printf("Bitstream CRC calculated: 0x%04x\n",
+	       (unsigned int) bitstream.calculate_bitstream_crc());
     } catch (BitstreamParseError e) {
         cerr << e.what() << endl;
     }
