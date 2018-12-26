@@ -68,15 +68,15 @@ def extract_elements(infile, tiles, max_row):
 					tiles[y][x]["val"].append(current_item)
 	
 def extract_fuses(infile, architecture, part):
-	rows = 0
-	cols = 0
+	frames = 0
+	bits_per_frame = 0
 	with open(infile, "rt") as fin:
 		for line in fin:
-			rows = rows + 1
-			cols = len(line.strip())
+			frames = frames + 1
+			bits_per_frame = len(line.strip())
 	data = {}
-	data["rows"] = rows
-	data["cols"] = cols
+	data["frames"] = frames
+	data["bits"] = bits_per_frame
 	output_file = path.join(database.get_db_subdir(architecture, part), "fuses.json")
 	with open(output_file, "wt") as fout:
 		json.dump(data, fout, sort_keys=True, indent=4)
