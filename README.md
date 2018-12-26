@@ -17,6 +17,8 @@ Project Tang itself provides the device database and tools for bitstream creatio
 This repository contains both tools and scripts which allow you to document the
 bit-stream format of Anlogic series FPGAs.
 
+Translation of offical documents can be found [here](https://github.com/kprasadvnsi/Anlogic_Doc_English).
+
 ### Quickstart Guide
 
 ## Process
