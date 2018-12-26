@@ -1,5 +1,6 @@
 #include "Bitstream.hpp"
 #include <cstring>
+#include <bitset>
 
 namespace Tang {
 
@@ -54,7 +55,7 @@ uint16_t Crc16::update_block(const std::vector<uint8_t> &data, int start, int en
 }
 
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
-        : data(data), metadata(metadata), cpld(false)
+        : data(data), metadata(metadata), cpld(false), fuse_started(false)
 {
 }
 
@@ -236,8 +237,9 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     // FPGA section
     case 0xec:
         if (data[1] == 0xf0) {
-            // printf("blocks %02x%02x\n",data[2],data[3]);
             data_blocks = (data[2] << 8) + data[3] + 1;
+            if (((data[2] << 8) + data[3])==frames)
+                fuse_started = true;
         }
         break;
     case 0xf0:
@@ -294,6 +296,8 @@ void Bitstream::parse()
                 if (crc_calc != crc_file)
                     throw BitstreamParseError("CRC16 error");
                 crc.update_block(block, frame_bytes, block.size());
+                if (fuse_started)
+                    fuses.push_back(std::vector<uint8_t>(block.begin(), block.begin() + frame_bytes));
             }
             data_blocks--;
         }
@@ -323,6 +327,16 @@ uint16_t Bitstream::calculate_bitstream_crc()
     } while (pos < data.size());
 
     return crc.finalise_crc16();
+}
+
+void Bitstream::write_fuse(std::ostream &file)
+{
+    for(const auto &frame : fuses) {
+        for(const uint8_t data : frame) {
+            file << std::bitset<8>(data);
+        }
+        file << std::endl;
+    }
 }
 
 BitstreamParseError::BitstreamParseError(const std::string &desc) : runtime_error(desc.c_str()), desc(desc), offset(-1)

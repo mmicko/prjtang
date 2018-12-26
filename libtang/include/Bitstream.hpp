@@ -36,7 +36,7 @@ class Bitstream
     void parse_command_cpld(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
                             const uint16_t crc16);
     uint16_t calculate_bitstream_crc();
-
+    void write_fuse(std::ostream &file);
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
 
@@ -47,6 +47,8 @@ class Bitstream
     std::vector<uint8_t> data;
     // BIT file metadata
     std::vector<std::string> metadata;
+    // Fuse data
+    std::vector<std::vector<uint8_t>> fuses;
     // status if bitstream is from CPLD
     bool cpld;
     // Number of frames in bitstream
@@ -55,6 +57,7 @@ class Bitstream
     uint16_t frame_bytes;
     // Crc for current data block (frame)
     Crc16 crc;
+    bool fuse_started;
 };
 
 class BitstreamParseError : std::runtime_error
