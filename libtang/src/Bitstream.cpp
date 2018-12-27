@@ -56,7 +56,7 @@ uint16_t Crc16::update_block(const std::vector<uint8_t> &data, int start, int en
 }
 
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
-        : data(data), metadata(metadata), cpld(false), fuse_started(false)
+        : data(data), metadata(metadata), cpld(false), fuse_started(false), deviceid(0)
 {
 }
 
@@ -110,6 +110,7 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
     switch (command) {
     case 0xf0: // JTAG ID
         printf("0xf0 DEVICEID:%s\n", vector_to_string(data).c_str());
+        deviceid = (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3];
         break;
     case 0xc1:
         printf("0xc1 VERSION:%02x UCODE:00000000%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", data[0],
@@ -160,6 +161,7 @@ void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, c
     case 0x90: // JTAG ID
         cpld = true;
         printf("0x90 DEVICEID:%s\n", vector_to_string(std::vector<uint8_t>(data.begin() + 3, data.end())).c_str());
+        deviceid = (data[3] << 24) + (data[4] << 16) + (data[5] << 8) + data[6];
         frame_bytes = 86; // for elf_3/6
         break;
     case 0xa8:
@@ -412,6 +414,115 @@ void Bitstream::write_fuse(std::ostream &file)
         }
         file << std::endl;
     }
+}
+
+uint8_t reverse_byte(uint8_t byte)
+{
+    uint8_t rev = 0;
+    for (int i = 0; i < 8; i++)
+        if (byte & (1 << i))
+            rev |= (1 << (7 - i));
+    return rev;
+}
+
+void Bitstream::write_svf(std::ostream &file)
+{
+    file << "// Created using Project Tang Software" << std::endl;
+    file << "// Date: 2018/12/27 14:58" << std::endl;
+    file << "// Architecture: eagle_s20" << std::endl;
+    file << "// Package: BG256" << std::endl;
+    file << std::endl;
+    file << "TRST OFF;" << std::endl;
+    file << "ENDIR IDLE;" << std::endl;
+    file << "ENDDR IDLE;" << std::endl;
+    file << "STATE RESET;" << std::endl;
+    file << "STATE IDLE;" << std::endl;
+    file << "FREQUENCY 1E6 HZ;" << std::endl;
+    // Operation: Program
+    file << "TIR 0 ;" << std::endl;
+    file << "HIR 0 ;" << std::endl;
+    file << "TDR 0 ;" << std::endl;
+    file << "HDR 0 ;" << std::endl;
+    file << "TIR 0 ;" << std::endl;
+    file << "HIR 0 ;" << std::endl;
+    file << "HDR 0 ;" << std::endl;
+    file << "TDR 0 ;" << std::endl;
+    // Loading device with 'idcode' instruction.
+    file << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
+    file << "RUNTEST 15 TCK;" << std::endl;
+    file << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << deviceid
+         << ") MASK (ffffffff) ;" << std::endl;
+    // Boundary Scan Chain Contents
+    // Position 1: BG256
+    file << "TIR 0 ;" << std::endl;
+    file << "HIR 0 ;" << std::endl;
+    file << "TDR 0 ;" << std::endl;
+    file << "HDR 0 ;" << std::endl;
+    file << "TIR 0 ;" << std::endl;
+    file << "HIR 0 ;" << std::endl;
+    file << "TDR 0 ;" << std::endl;
+    file << "HDR 0 ;" << std::endl;
+    file << "TIR 0 ;" << std::endl;
+    file << "HIR 0 ;" << std::endl;
+    file << "HDR 0 ;" << std::endl;
+    file << "TDR 0 ;" << std::endl;
+    // Loading device with 'idcode' instruction.
+    file << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
+    file << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << deviceid
+         << ") MASK (ffffffff) ;" << std::endl;
+    // Loading device with 'refresh' instruction.
+    file << "SIR 8 TDI (01) SMASK (ff) ;" << std::endl;
+    // Loading device with 'bypass' instruction.
+    file << "SIR 8 TDI (1f) ;" << std::endl;
+    file << "SIR 8 TDI (39) ;" << std::endl;
+    file << "RUNTEST 50000 TCK;" << std::endl;
+    // Loading device with 'jtag program' instruction.
+    file << "SIR 8 TDI (30) SMASK (ff) ;" << std::endl;
+    file << "RUNTEST 15 TCK;" << std::endl;
+    // Loading device with a `cfg_in` instruction.
+    file << "SIR 8 TDI (3b) SMASK (ff) ;" << std::endl;
+    file << "RUNTEST 15 TCK;" << std::endl;
+
+    size_t count = 0;
+    for (auto const block : blocks) {
+        count += block.size();
+    }
+    // Begin of bitstream data
+    file << "SDR " << std::dec << int(count * 8) << " TDI (" << std::endl;
+    int i = 0;
+    for (auto it = blocks.rbegin(); it != blocks.rend(); ++it) {
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            file << std::hex << std::setw(2) << std::setfill('0') << int(reverse_byte(((*it)[it->size() - pos - 1])));
+            i++;
+            if ((i % 1024) == 0)
+                file << std::endl;
+        }
+    }
+    file << std::endl << ") SMASK (" << std::endl;
+    for (size_t j = 1; j < count + 1; j++) {
+        file << "ff";
+        if ((j % 1024) == 0)
+            file << std::endl;
+    }
+    file << std::endl << ") ;" << std::endl;
+
+    file << "RUNTEST 100 TCK;" << std::endl;
+    // Loading device with a `jtag start` instruction.
+    file << "SIR 8 TDI (3d) ;" << std::endl;
+    file << "RUNTEST 15 TCK;" << std::endl;
+    // Loading device with 'bypass' instruction.
+    file << "SIR 8 TDI (1f) ;" << std::endl;
+    file << "RUNTEST 1000 TCK;" << std::endl;
+    file << "TIR 0 ;" << std::endl;
+    file << "HIR 0 ;" << std::endl;
+    file << "HDR 0 ;" << std::endl;
+    file << "TDR 0 ;" << std::endl;
+    file << "TIR 0 ;" << std::endl;
+    file << "HIR 0 ;" << std::endl;
+    file << "HDR 0 ;" << std::endl;
+    file << "TDR 0 ;" << std::endl;
+    // Loading device with 'bypass' instruction.
+    file << "SIR 8 TDI (1f) ;" << std::endl;
 }
 
 BitstreamParseError::BitstreamParseError(const std::string &desc) : runtime_error(desc.c_str()), desc(desc), offset(-1)

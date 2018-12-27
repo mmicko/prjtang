@@ -41,6 +41,7 @@ class Bitstream
     void write_bas(std::ostream &file);
     void write_bmk(std::ostream &file);
     void write_bma(std::ostream &file);
+    void write_svf(std::ostream &file);
 
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
@@ -64,6 +65,8 @@ class Bitstream
     Crc16 crc;
     bool fuse_started;
     size_t fuse_start_block;
+
+    uint32_t deviceid;
 };
 
 class BitstreamParseError : std::runtime_error

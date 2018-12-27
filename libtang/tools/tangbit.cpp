@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
     options.add_options()("fuse", po::value<std::string>(), "output fuse file");
     options.add_options()("bmk", po::value<std::string>(), "output bmk file");
     options.add_options()("bma", po::value<std::string>(), "output bma file");
+    options.add_options()("svf", po::value<std::string>(), "output svf file");
 
     po::positional_options_description pos;
     options.add_options()("input", po::value<std::string>()->required(), "input bitstream file");
@@ -74,6 +75,10 @@ int main(int argc, char *argv[])
         if (vm.count("bmk")) {
             ofstream bmk_file(vm["bmk"].as<string>(), ios::out | ios::trunc | ios::binary);
             bitstream.write_bmk(bmk_file);
+        }
+        if (vm.count("svf")) {
+            ofstream svf_file(vm["svf"].as<string>(), ios::out | ios::trunc);
+            bitstream.write_svf(svf_file);
         }
     } catch (BitstreamParseError e) {
         cerr << e.what() << endl;
