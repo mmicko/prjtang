@@ -283,9 +283,14 @@ void Bitstream::parse()
             throw BitstreamParseError("Invalid data in bitstream");
 
         std::vector<uint8_t> block = std::vector<uint8_t>(data.begin() + pos, data.begin() + pos + len);
+        blocks.push_back(block);
         if (data_blocks == 0) {
             crc.update_block(block, 0, block.size());
             parse_block(block);
+            if (fuse_started) {
+                fuse_start_block = blocks.size();
+                fuse_started = false;
+            }
         } else {
             // printf("data:%s\n", vector_to_string(block).c_str());
             if (frame_bytes > block.size()) {
@@ -296,8 +301,6 @@ void Bitstream::parse()
                 if (crc_calc != crc_file)
                     throw BitstreamParseError("CRC16 error");
                 crc.update_block(block, frame_bytes, block.size());
-                if (fuse_started)
-                    fuses.push_back(std::vector<uint8_t>(block.begin(), block.begin() + frame_bytes));
             }
             data_blocks--;
         }
@@ -308,32 +311,38 @@ void Bitstream::parse()
 
 uint16_t Bitstream::calculate_bitstream_crc()
 {
-    size_t pos = 0;
-    data_blocks = 0;
     crc.reset_crc16();
-    do {
-        uint16_t len = (data[pos++] << 8);
-        len += data[pos++];
-        if ((len & 7) != 0)
-            throw BitstreamParseError("Invalid size value in bitstream");
-        len >>= 3;
-        if ((pos + len) > data.size())
-            throw BitstreamParseError("Invalid data in bitstream");
-
-        std::vector<uint8_t> block = std::vector<uint8_t>(data.begin() + pos, data.begin() + pos + len);
+    for (const auto &block : blocks) {
         crc.update_block(block, 0, block.size());
-
-        pos += len;
-    } while (pos < data.size());
-
+    }
     return crc.finalise_crc16();
+}
+
+void Bitstream::write_bin(std::ostream &file)
+{
+    for (const auto &block : blocks) {
+        file.write((const char *)&block[0], block.size());
+    }
+}
+
+void Bitstream::write_bas(std::ostream &file)
+{
+    for (const auto &meta : metadata) {
+        file << meta << std::endl;
+    }
+    for (const auto &block : blocks) {
+        for (size_t pos = 0; pos < block.size(); pos++) {
+            file << std::bitset<8>(block[pos]);
+        }
+        file << std::endl;
+    }
 }
 
 void Bitstream::write_fuse(std::ostream &file)
 {
-    for (const auto &frame : fuses) {
-        for (const uint8_t data : frame) {
-            file << std::bitset<8>(data);
+    for (auto it = (blocks.begin() + fuse_start_block); it != (blocks.begin() + fuse_start_block + frames); ++it) {
+        for (size_t pos = 0; pos < frame_bytes; pos++) {
+            file << std::bitset<8>((*it)[pos]);
         }
         file << std::endl;
     }

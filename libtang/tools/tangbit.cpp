@@ -54,8 +54,16 @@ int main(int argc, char *argv[])
         bitstream.parse();
         printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
         if (vm.count("fuse")) {
-            ofstream fuse_file(vm["fuse"].as<string>());
+            ofstream fuse_file(vm["fuse"].as<string>(), ios::out | ios::trunc);
             bitstream.write_fuse(fuse_file);
+        }
+        if (vm.count("bas")) {
+            ofstream bas_file(vm["bas"].as<string>(), ios::out | ios::trunc);
+            bitstream.write_bas(bas_file);
+        }
+        if (vm.count("bin")) {
+            ofstream bin_file(vm["bin"].as<string>(), ios::out | ios::trunc | ios::binary);
+            bitstream.write_bin(bin_file);
         }
     } catch (BitstreamParseError e) {
         cerr << e.what() << endl;
