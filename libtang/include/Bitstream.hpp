@@ -39,6 +39,8 @@ class Bitstream
     void write_fuse(std::ostream &file);
     void write_bin(std::ostream &file);
     void write_bas(std::ostream &file);
+    void write_bmk(std::ostream &file);
+    void write_bma(std::ostream &file);
 
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);

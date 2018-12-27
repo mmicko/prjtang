@@ -18,6 +18,8 @@ int main(int argc, char *argv[])
     options.add_options()("bin", po::value<std::string>(), "output bin file");
     options.add_options()("bas", po::value<std::string>(), "output bas file");
     options.add_options()("fuse", po::value<std::string>(), "output fuse file");
+    options.add_options()("bmk", po::value<std::string>(), "output bmk file");
+    options.add_options()("bma", po::value<std::string>(), "output bma file");
 
     po::positional_options_description pos;
     options.add_options()("input", po::value<std::string>()->required(), "input bitstream file");
@@ -64,6 +66,14 @@ int main(int argc, char *argv[])
         if (vm.count("bin")) {
             ofstream bin_file(vm["bin"].as<string>(), ios::out | ios::trunc | ios::binary);
             bitstream.write_bin(bin_file);
+        }
+        if (vm.count("bma")) {
+            ofstream bma_file(vm["bma"].as<string>(), ios::out | ios::trunc);
+            bitstream.write_bma(bma_file);
+        }
+        if (vm.count("bmk")) {
+            ofstream bmk_file(vm["bmk"].as<string>(), ios::out | ios::trunc | ios::binary);
+            bitstream.write_bmk(bmk_file);
         }
     } catch (BitstreamParseError e) {
         cerr << e.what() << endl;

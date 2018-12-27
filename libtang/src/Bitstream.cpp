@@ -1,5 +1,6 @@
 #include "Bitstream.hpp"
 #include <bitset>
+#include <boost/algorithm/string/predicate.hpp>
 #include <cstring>
 
 namespace Tang {
@@ -333,6 +334,71 @@ void Bitstream::write_bas(std::ostream &file)
     for (const auto &block : blocks) {
         for (size_t pos = 0; pos < block.size(); pos++) {
             file << std::bitset<8>(block[pos]);
+        }
+        file << std::endl;
+    }
+}
+
+void Bitstream::write_bmk(std::ostream &file)
+{
+    for (const auto &meta : metadata) {
+        if (boost::starts_with(meta, "# Bitstream CRC:"))
+            continue;
+        if (boost::starts_with(meta, "# USER CODE:"))
+            continue;
+        file << meta << std::endl;
+    }
+    for (auto it = blocks.begin(); it != (blocks.begin() + fuse_start_block); ++it) {
+        uint16_t size = it->size() << 3;
+        file << uint8_t(size >> 8) << uint8_t(size & 0xff);
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            file << ((*it)[pos]);
+        }
+    }
+    for (auto it = blocks.begin() + fuse_start_block; it != (blocks.begin() + fuse_start_block + frames + 1); ++it) {
+        uint16_t size = it->size() << 3;
+        file << uint8_t(size >> 8) << uint8_t(size & 0xff);
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            file << uint8_t(0);
+        }
+    }
+    for (auto it = blocks.begin() + fuse_start_block + frames + 1; it != blocks.end(); ++it) {
+        if ((*it)[0] == 0)
+            break;
+        uint16_t size = it->size() << 3;
+        file << uint8_t(size >> 8) << uint8_t(size & 0xff);
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            file << (*it)[pos];
+        }
+    }
+}
+
+void Bitstream::write_bma(std::ostream &file)
+{
+    for (const auto &meta : metadata) {
+        if (boost::starts_with(meta, "# Bitstream CRC:"))
+            continue;
+        if (boost::starts_with(meta, "# USER CODE:"))
+            continue;
+        file << meta << std::endl;
+    }
+    for (auto it = blocks.begin(); it != (blocks.begin() + fuse_start_block); ++it) {
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            file << std::bitset<8>((*it)[pos]);
+        }
+        file << std::endl;
+    }
+    for (auto it = blocks.begin() + fuse_start_block; it != (blocks.begin() + fuse_start_block + frames + 1); ++it) {
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            file << std::bitset<8>(0);
+        }
+        file << std::endl;
+    }
+    for (auto it = blocks.begin() + fuse_start_block + frames + 1; it != blocks.end(); ++it) {
+        if ((*it)[0] == 0)
+            break;
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            file << std::bitset<8>((*it)[pos]);
         }
         file << std::endl;
     }
