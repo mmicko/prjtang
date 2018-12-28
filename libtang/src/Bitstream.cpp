@@ -56,7 +56,7 @@ uint16_t Crc16::update_block(const std::vector<uint8_t> &data, int start, int en
 }
 
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
-        : data(data), metadata(metadata), cpld(false), fuse_started(false), deviceid(0)
+        : data(data), metadata(metadata), cpld(false), fuse_started(false), deviceid(0x12006c31)
 {
 }
 
