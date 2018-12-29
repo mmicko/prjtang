@@ -132,6 +132,11 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
         frames = data[0] * 256 + data[1];
         frame_bytes = data[2] * 256 + data[3];
         break;
+    case 0xc8:
+        printf("0xc8 BYTES_PER_MEM_FRAME:%d (%d bits)\n", (data[2] * 256 + data[3]),
+               (data[2] * 256 + data[3]) * 8);
+        mem_frame_bytes = data[2] * 256 + data[3];
+        break;
 
     case 0xf1:
         printf("0xf1 set CRC16 to :%04x\n", (data[0] * 256 + data[1]));
@@ -143,7 +148,6 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
     case 0xf3:
     case 0xc4:
     case 0xc5:
-    case 0xc8:
     case 0xca:
         printf("0x%02x [%04x] [crc %04x]:%s \n", command, size, crc16, vector_to_string(data).c_str());
         break;

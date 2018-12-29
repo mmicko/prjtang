@@ -61,6 +61,8 @@ class Bitstream
     uint16_t frames;
     // Number of bytes in frame
     uint16_t frame_bytes;
+    // Number of bytes in memory frame
+    uint16_t mem_frame_bytes;
     // Crc for current data block (frame)
     Crc16 crc;
     bool fuse_started;
