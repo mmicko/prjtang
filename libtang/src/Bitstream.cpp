@@ -2,6 +2,7 @@
 #include <bitset>
 #include <boost/algorithm/string/predicate.hpp>
 #include <cstring>
+#include <iostream>
 
 namespace Tang {
 
@@ -109,47 +110,56 @@ void Bitstream::parse_command(const uint8_t command, const uint16_t size, const 
 {
     switch (command) {
     case 0xf0: // JTAG ID
-        printf("0xf0 DEVICEID:%s\n", vector_to_string(data).c_str());
+        if (verbose)
+            printf("0xf0 DEVICEID:%s\n", vector_to_string(data).c_str());
         deviceid = (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3];
         break;
     case 0xc1:
-        printf("0xc1 VERSION:%02x UCODE:00000000%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", data[0],
-               BIN(data[1]), BIN(data[2]), BIN(data[3]));
+        if (verbose)
+            printf("0xc1 VERSION:%02x UCODE:00000000%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", data[0],
+                   BIN(data[1]), BIN(data[2]), BIN(data[3]));
         break;
     case 0xc2:
-        printf("0xc2 hswapen %c mclk_freq_div %c%c%c%c%c unk %c%c active_done %c unk %c%c%c cascade_mode %c%c security "
-               "%c unk %c auto_clear_en %c unk %c%c persist_bit %c UNK %c%c%c%c%c%c%c%c%c%c%c close_osc %c\n",
-               BIN(data[0]), BIN(data[1]), BIN(data[2]), BIN(data[3]));
+        if (verbose)
+            printf("0xc2 hswapen %c mclk_freq_div %c%c%c%c%c unk %c%c active_done %c unk %c%c%c cascade_mode %c%c "
+                   "security "
+                   "%c unk %c auto_clear_en %c unk %c%c persist_bit %c UNK %c%c%c%c%c%c%c%c%c%c%c close_osc %c\n",
+                   BIN(data[0]), BIN(data[1]), BIN(data[2]), BIN(data[3]));
         break;
     case 0xc3:
-        printf("0xc3 UNK %c%c%c%c%c PLL %c%c%c%c unk %c%c%c done_sync %c pll_lock_wait %c%c%c%c done_phase %c%c%c "
-               "goe_phase %c%c%c gsr_phase %c%c%c gwd_phase %c%c%c usr_gsrn_en %c gsrn_sync_sel %c  UNK %c\n",
-               BIN(data[0]), BIN(data[1]), BIN(data[2]), BIN(data[3]));
+        if (verbose)
+            printf("0xc3 UNK %c%c%c%c%c PLL %c%c%c%c unk %c%c%c done_sync %c pll_lock_wait %c%c%c%c done_phase %c%c%c "
+                   "goe_phase %c%c%c gsr_phase %c%c%c gwd_phase %c%c%c usr_gsrn_en %c gsrn_sync_sel %c  UNK %c\n",
+                   BIN(data[0]), BIN(data[1]), BIN(data[2]), BIN(data[3]));
         break;
     case 0xc7:
-        printf("0xc7 FRAMES:%d BYTES_PER_FRAME:%d (%d bits)\n", (data[0] * 256 + data[1]), (data[2] * 256 + data[3]),
-               (data[2] * 256 + data[3]) * 8);
+        if (verbose)
+            printf("0xc7 FRAMES:%d BYTES_PER_FRAME:%d (%d bits)\n", (data[0] * 256 + data[1]),
+                   (data[2] * 256 + data[3]), (data[2] * 256 + data[3]) * 8);
         frames = data[0] * 256 + data[1];
         frame_bytes = data[2] * 256 + data[3];
         break;
     case 0xc8:
-        printf("0xc8 BYTES_PER_MEM_FRAME:%d (%d bits)\n", (data[2] * 256 + data[3]),
-               (data[2] * 256 + data[3]) * 8);
+        if (verbose)
+            printf("0xc8 BYTES_PER_MEM_FRAME:%d (%d bits)\n", (data[2] * 256 + data[3]), (data[2] * 256 + data[3]) * 8);
         mem_frame_bytes = data[2] * 256 + data[3];
         break;
 
     case 0xf1:
-        printf("0xf1 set CRC16 to :%04x\n", (data[0] * 256 + data[1]));
+        if (verbose)
+            printf("0xf1 set CRC16 to :%04x\n", (data[0] * 256 + data[1]));
         crc.reset_crc16(data[0] * 256 + data[1]);
         break;
     case 0xf7:
-        printf("0xf7 DONE\n");
+        if (verbose)
+            printf("0xf7 DONE\n");
         break;
     case 0xf3:
     case 0xc4:
     case 0xc5:
     case 0xca:
-        printf("0x%02x [%04x] [crc %04x]:%s \n", command, size, crc16, vector_to_string(data).c_str());
+        if (verbose)
+            printf("0x%02x [%04x] [crc %04x]:%s \n", command, size, crc16, vector_to_string(data).c_str());
         break;
     default:
         std::ostringstream os;
@@ -164,12 +174,14 @@ void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, c
     switch (command) {
     case 0x90: // JTAG ID
         cpld = true;
-        printf("0x90 DEVICEID:%s\n", vector_to_string(std::vector<uint8_t>(data.begin() + 3, data.end())).c_str());
+        if (verbose)
+            printf("0x90 DEVICEID:%s\n", vector_to_string(std::vector<uint8_t>(data.begin() + 3, data.end())).c_str());
         deviceid = (data[3] << 24) + (data[4] << 16) + (data[5] << 8) + data[6];
         frame_bytes = 86; // for elf_3/6
         break;
     case 0xa8:
-        printf("0xa8 set CRC16 to :%04x\n", (data[2] * 256 + data[3]));
+        if (verbose)
+            printf("0xa8 set CRC16 to :%04x\n", (data[2] * 256 + data[3]));
         crc.reset_crc16(data[2] * 256 + data[3]);
         break;
     case 0xa1:
@@ -177,7 +189,8 @@ void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, c
     case 0xac:
     case 0xb1:
     case 0xc4:
-        printf("0x%02x [%04x] [crc %04x]:%s \n", command, size, crc16, vector_to_string(data).c_str());
+        if (verbose)
+            printf("0x%02x [%04x] [crc %04x]:%s \n", command, size, crc16, vector_to_string(data).c_str());
         break;
     default:
         std::ostringstream os;
@@ -189,7 +202,8 @@ void Bitstream::parse_command_cpld(const uint8_t command, const uint16_t size, c
 void Bitstream::parse_block(const std::vector<uint8_t> &data)
 {
     Crc16 crc;
-    // printf("block:%s\n", vector_to_string(data).c_str());
+    if (verbose)
+        printf("block:%s\n", vector_to_string(data).c_str());
     switch (data[0]) {
     // Common section
     case 0xff: // all 0xff header
@@ -223,7 +237,6 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     // CPLD section
     case 0xaa:
         if (data[1] == 0x00) {
-            // printf("blocks %02x%02x\n",data[2],data[3]);
             data_blocks = (data[2] << 8) + data[3];
         }
         break;
@@ -275,10 +288,11 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     }
 }
 
-void Bitstream::parse()
+void Bitstream::parse(bool verbose_info, bool verbose_data)
 {
     size_t pos = 0;
     data_blocks = 0;
+    verbose = verbose_info;
     crc.reset_crc16();
     do {
         uint16_t len = (data[pos++] << 8);
@@ -299,7 +313,8 @@ void Bitstream::parse()
                 fuse_started = false;
             }
         } else {
-            // printf("data:%s\n", vector_to_string(block).c_str());
+            if (verbose_data)
+                printf("data:%s\n", vector_to_string(block).c_str());
             if (frame_bytes > block.size()) {
                 crc.update_block(block, 0, block.size());
             } else {
@@ -417,6 +432,27 @@ void Bitstream::write_fuse(std::ostream &file)
             file << std::bitset<8>((*it)[pos]);
         }
         file << std::endl;
+    }
+}
+
+void Bitstream::extract_bits()
+{
+    int row = 0;
+    for (auto it = (blocks.begin() + fuse_start_block); it != (blocks.begin() + fuse_start_block + frames); ++it) {
+        int col = 0;
+        for (size_t pos = 0; pos < frame_bytes; pos++) {
+            uint8_t data = (*it)[pos];
+            if (data != 0x00) {
+                std::bitset<8> b(data);
+                for (int i = 7; i >= 0; i--) {
+                    if (b.test(i)) {
+                        printf("row:%d col:%d\n", row, col + 7 - i);
+                    }
+                }
+            }
+            col += 8;
+        }
+        row++;
     }
 }
 

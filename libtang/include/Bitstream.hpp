@@ -29,7 +29,7 @@ class Bitstream
   public:
     static Bitstream read(std::istream &in);
 
-    void parse();
+    void parse(bool verbose_info, bool verbose_data);
     void parse_block(const std::vector<uint8_t> &data);
     void parse_command(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
                        const uint16_t crc16);
@@ -42,6 +42,7 @@ class Bitstream
     void write_bmk(std::ostream &file);
     void write_bma(std::ostream &file);
     void write_svf(std::ostream &file);
+    void extract_bits();
 
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
@@ -65,9 +66,13 @@ class Bitstream
     uint16_t mem_frame_bytes;
     // Crc for current data block (frame)
     Crc16 crc;
+    // Flag that actual fuse data have started
     bool fuse_started;
+    // Number of block where fuse data starts
     size_t fuse_start_block;
-
+    // Verbose flag
+    bool verbose;
+    // Current device id
     uint32_t deviceid;
 };
 

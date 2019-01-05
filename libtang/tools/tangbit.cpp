@@ -21,6 +21,9 @@ int main(int argc, char *argv[])
     options.add_options()("bmk", po::value<std::string>(), "output bmk file");
     options.add_options()("bma", po::value<std::string>(), "output bma file");
     options.add_options()("svf", po::value<std::string>(), "output svf file");
+    options.add_options()("verbose", "show parsing info");
+    options.add_options()("verbose_data", "show additional parsing data");
+    options.add_options()("bits", "extract bits locations");
 
     po::positional_options_description pos;
     options.add_options()("input", po::value<std::string>()->required(), "input bitstream file");
@@ -47,6 +50,8 @@ int main(int argc, char *argv[])
         return vm.count("help") ? 0 : 1;
     }
 
+    bool verbose = vm.count("verbose");
+
     ifstream bitstream_file(vm["input"].as<string>());
     if (!bitstream_file) {
         cerr << "Failed to open input file" << endl;
@@ -54,8 +59,9 @@ int main(int argc, char *argv[])
     }
     try {
         Bitstream bitstream = Bitstream::read(bitstream_file);
-        bitstream.parse();
-        printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
+        bitstream.parse(verbose, vm.count("verbose_data"));
+        if (verbose)
+            printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
         if (vm.count("fuse")) {
             ofstream fuse_file(vm["fuse"].as<string>(), ios::out | ios::trunc);
             bitstream.write_fuse(fuse_file);
@@ -79,6 +85,9 @@ int main(int argc, char *argv[])
         if (vm.count("svf")) {
             ofstream svf_file(vm["svf"].as<string>(), ios::out | ios::trunc);
             bitstream.write_svf(svf_file);
+        }
+        if (vm.count("bits")) {
+            bitstream.extract_bits();
         }
     } catch (BitstreamParseError e) {
         cerr << e.what() << endl;
