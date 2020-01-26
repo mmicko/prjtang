@@ -8,9 +8,9 @@ import database
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('architecture', type=str,
-					help="FPGA architecture (e.g. ECP5)")
+					help="FPGA architecture (e.g. eg4)")
 parser.add_argument('part', type=str,
-					help="FPGA part (e.g. LFE5U-85F)")
+					help="FPGA part (e.g. eagle_s20)")
 parser.add_argument('outfile', type=argparse.FileType('w'),
 					help="output HTML file")
 
@@ -46,7 +46,7 @@ def main(argv):
 	max_row = device_info["max_row"]
 	max_col = device_info["max_col"]
 	tiles = []
-	
+
 	for i in range(max_row ):
 		row = []
 		for j in range(max_col):

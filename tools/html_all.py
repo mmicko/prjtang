@@ -44,10 +44,12 @@ def main():
 
 	docs_toc = ""
 	for architecture in sorted(devices["architectures"].keys()):
+		print("Architecture: " + architecture)
 		docs_toc += "<h3>{} Architecture</h3>".format(architecture.upper())
 		docs_toc += "<h4>Bitstream Documentation</h4>"
 		docs_toc += "<ul>"
 		for part in sorted(devices["architectures"][architecture]["parts"].keys()):
+			print("Part: " + part)
 			docs_toc += '<li><a href="{}">{} Documentation</a></li>'.format('{}.html'.format(part),part.upper())
 			html_tilegrid.main(["html_tilegrid", architecture,  part, path.join("work_html",part + ".html")])
 		docs_toc += "</ul>"

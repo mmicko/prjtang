@@ -21,7 +21,27 @@ Translation of offical documents can be found [here](https://github.com/kprasadv
 
 ### Quickstart Guide
 
+Take latest TD distribution from [Sipeed.com](http://dl.sipeed.com/TANG/Premier/IDE/TD1909_linux.rar)
+Point out TD_HOME to your TangDinasty installation and set environment.
+
+```
+export TD_HOME=/opt/TD
+source environment.sh
+```
+
 ## Process
+
+To extract tilegrid information run:
+
+```
+python get_tilegrid_all.py
+```
+
+In order to get HTML representation of tilegrid data after run:
+
+```
+python html_all.py
+```
 
 ### Parts
 

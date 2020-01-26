@@ -5,12 +5,20 @@ import os
 from os import path
 import json
 import subprocess
-
+import sys
 
 def get_tang_root():
     """Return the absolute path to the Project Tang repo root"""
     return path.abspath(path.join(__file__, "../../../"))
 
+def get_tangdinasty_root():
+    if "TD_HOME" not in os.environ:        
+        print("TD_HOME must be set")
+        sys.exit(-1)
+    if not path.exists(path.join(os.environ["TD_HOME"], "bin", "td")) and not path.exists(path.join(os.environ["TD_HOME"], "bin", "td.exe")):
+        print("TD_HOME must point to directory containing TangDinasty software")
+        sys.exit(-1)
+    return path.abspath(os.environ["TD_HOME"])
 
 def get_db_root():
     """
