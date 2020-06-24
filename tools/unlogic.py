@@ -10,6 +10,9 @@ def print_decrypt(val):
 	if (decrypt):
 		print(val, file=decrypt)
 
+def print_decrypt_tofile(f, val):
+	print(val, file=f)
+
 def decode_string(input):
 	global keypos
 	global key
@@ -66,6 +69,8 @@ def decode_chipdb(argv):
 	parser.add_argument("--tilegrid", metavar="<path_to_tilegrid_json>",
         action=DictAction, dest="file_paths")
 	parser.add_argument("--decrypt", metavar="<path_to_decrypted_file>",
+        action=DictAction, dest="file_paths")
+	parser.add_argument("--datadir", metavar="<path_to_data_directory>",
         action=DictAction, dest="file_paths")
 	args = parser.parse_args(argv[1:])	
 	dbfile = args.dbfile
@@ -264,21 +269,28 @@ def decode_chipdb(argv):
 		for i in range(int(blocks[1])):
 			unk,out  = decode(fp, [0])
 			print_decrypt(out)
-			k = int(unk[3])
-			for j in range(k):
-				unk,out  = decode(fp, [0,1])
-				print_decrypt(out)
-				n1 = int(unk[9])
-				unk,out  = decode(fp, [])
-				print_decrypt(out)
-				unk,out  = decode(fp, [])
-				print_decrypt(out)
-				for l in range(n1):
-					unk,out  = decode(fp, [1])
+			with open(os.path.join(file_paths["datadir"],unk[0]), "wt") as f:
+				print_decrypt_tofile(f, out)
+				k = int(unk[3])
+				for j in range(k):
+					unk,out  = decode(fp, [0,1])
 					print_decrypt(out)
-				empty,out  = decode(fp, [])
-				print_decrypt(out)
-				assert len(empty)==0
+					print_decrypt_tofile(f, out)
+					n1 = int(unk[9])
+					unk,out  = decode(fp, [])
+					print_decrypt(out)
+					print_decrypt_tofile(f, out)
+					unk,out  = decode(fp, [])
+					print_decrypt(out)
+					print_decrypt_tofile(f, out)
+					for l in range(n1):
+						unk,out  = decode(fp, [1])
+						print_decrypt(out)
+						print_decrypt_tofile(f, out)
+					empty,out  = decode(fp, [])
+					print_decrypt(out)
+					print_decrypt_tofile(f, out)
+					assert len(empty)==0
 			empty,out  = decode(fp, [])
 			print_decrypt(out)
 			assert len(empty)==0

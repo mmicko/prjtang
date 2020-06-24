@@ -23,10 +23,10 @@ def main():
 			print("Part: " + part)
 			selected_part = devices["architectures"][architecture]["parts"][part]
 			package = selected_part["packages"][0]
-
+			os.mkdir(path.join("work_decrypt",part))
 			unc_file = path.join("work_decrypt", part + ".unc")
 			chipdb = path.join(tang_root, "arch", part + ".db") 
-			unlogic.decode_chipdb(["decrypt_all", chipdb, "--decrypt", unc_file])
+			unlogic.decode_chipdb(["decrypt_all", chipdb, "--decrypt", unc_file, "--datadir", path.join("work_decrypt",part)])
 
 if __name__ == "__main__":
 	main()
