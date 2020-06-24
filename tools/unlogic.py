@@ -4,12 +4,13 @@ import os
 import json
 
 decrypt = None
-
+inst = dict()
+bcc_info = dict()
+info = []
 def print_decrypt(val):
 	global decrypt
 	if (decrypt):
 		print(val, file=decrypt)
-
 def print_decrypt_tofile(f, val):
 	print(val, file=f)
 
@@ -269,13 +270,28 @@ def decode_chipdb(argv):
 		for i in range(int(blocks[1])):
 			unk,out  = decode(fp, [0])
 			print_decrypt(out)
+			global bcc_info
+			bcc_name = unk[0]
 			with open(os.path.join(file_paths["datadir"],unk[0]), "wt") as f:
 				print_decrypt_tofile(f, out)
 				k = int(unk[3])
+				bits = dict()
 				for j in range(k):
 					unk,out  = decode(fp, [0,1])
 					print_decrypt(out)
 					print_decrypt_tofile(f, out)
+					current_item = {
+						"type": unk[1],
+						"y": int(unk[2]),
+						"x": int(unk[3]),
+						"xoff": int(unk[4]),
+						"yoff": int(unk[5]),
+						"unk5": int(unk[6]),
+						"unk6": int(unk[7]),
+						"unk7": int(unk[8]),
+						"cnt": int(unk[9])
+					}
+					bits[unk[0]] = current_item
 					n1 = int(unk[9])
 					unk,out  = decode(fp, [])
 					print_decrypt(out)
@@ -291,6 +307,7 @@ def decode_chipdb(argv):
 					print_decrypt(out)
 					print_decrypt_tofile(f, out)
 					assert len(empty)==0
+			bcc_info[bcc_name] = bits
 			empty,out  = decode(fp, [])
 			print_decrypt(out)
 			assert len(empty)==0
@@ -307,7 +324,11 @@ def decode_chipdb(argv):
 			row = []
 			for j in range(max_col):
 				row.append([])
-			tiles.append(row)		
+			tiles.append(row)
+			row2 = []
+			for j in range(max_col):
+				row2.append([])
+			info.append(row2)
 		bl = int(blocks[8])
 		bl2 = int(blocks[7])		
 		for i in range(max_row*max_col):
@@ -318,6 +339,8 @@ def decode_chipdb(argv):
 			num = int(unk[2])
 			
 			tile_val = []
+			global inst
+			info[y][x] = dict()
 			for j in range(num):
 				unk,out  = decode(fp, [0,1])
 				print_decrypt(out)
@@ -326,14 +349,18 @@ def decode_chipdb(argv):
 				current_item = {
 					"inst": unk[0],
 					"type": unk[1],
+					"x" : int(unk[2]),
+					"y" : int(unk[3]),
 					"unk1": int(unk[4]),
 					"unk2": int(unk[5]),
 					"wl_beg": int(unk[6]),
 					"bl_beg": int(unk[7]),
-					"unk5": int(unk[8])
+					"flag": int(unk[8])
 				}
 				tile_val.append(current_item)
-
+				inst[unk[0]] = current_item
+				if (int(unk[8])==-1):
+					info[y][x][unk[1]] = current_item
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
 				assert len(empty)==0
