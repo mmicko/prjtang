@@ -47,12 +47,6 @@ def extract_elements(bitfile, infile):
 					
 				print("{}/{},{} flag:{} row:{} col:{} {}".format(prefix,line,t["type"],t["flag"],row, col, status))
 
-				#if (status == "FAILED"):
-				#	print(t["flag"])
-				#	print("{}/{} row:{} col:{} {}".format(prefix,line, row, col, status))
-				#	print(unlogic.inst[prefix])
-				#	print(b[line])
-	#print(bits)
 	
 def main(argv):
 	parser = argparse.ArgumentParser(prog="check_fuse_creation",
