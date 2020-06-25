@@ -23,7 +23,7 @@ def main():
 
 			json_file = path.join(database.get_db_subdir(architecture, part), "tilegrid.json")
 			chipdb = path.join(tang_root, "arch", part + ".db") 
-			unlogic.decode_chipdb(["get_tilegrid_all", chipdb, "--tilegrid", json_file])
+			unlogic.decode_chipdb(["get_tilegrid_all", chipdb, "--tilegrid", json_file, "--datadir", path.join("work_decrypt",part)])
 
 if __name__ == "__main__":
 	main()
