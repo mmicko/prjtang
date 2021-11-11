@@ -78,7 +78,8 @@
                         "EF2L45LG144B",
                         "EF2M45LG64B",
                         "EF2L45BG256B",
-                        "EF2M45LG48B"
+                        "EF2M45LG48B",
+                        "EF2M45VG81C"
                     ],
                     "max_col": 25,
                     "max_row": 30
@@ -97,6 +98,13 @@
                 "ef3_1": {
                     "packages": [
                         "EF3L15CG256B"
+                    ],
+                    "max_col": 25,
+                    "max_row": 30
+                },
+                "ef3_2": {
+                    "packages": [
+                        "EF3L25CG256B"
                     ],
                     "max_col": 25,
                     "max_row": 30

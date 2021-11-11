@@ -98,6 +98,7 @@ def decode_chipdb(argv):
 		decrypt = open(file_paths["decrypt"], "wt")
 
 	with open(dbfile) as fp:
+		info = []
 		# First line contain encryption key
 		items, out  = decode(fp, [])
 		print_decrypt(out)
@@ -111,7 +112,9 @@ def decode_chipdb(argv):
 			print_decrypt(out)
 		for i in range(arch):
 			# eagle_20 NONE NONE 8 8 41 72 2450 64 29 16 0 2
-			items,out  = decode(fp, [0,1,2])
+			items,out  = decode(fp, [0,1,2,3,4,5])
+			print_decrypt(out)
+			items,out  = decode(fp, [])
 			print_decrypt(out)
 			# 1 1 0 0 0
 			items,out  = decode(fp, [])
@@ -150,7 +153,7 @@ def decode_chipdb(argv):
 			print_decrypt(out)
 			unk,out  = decode(fp, [])
 			print_decrypt(out)
-			for j in range(3,42):
+			for j in range(3,49):
 				unk,out  = decode(fp, [])
 				print_decrypt(out)
 				assert int(unk[0])==j
@@ -198,12 +201,20 @@ def decode_chipdb(argv):
 			for j in range(num):
 				unk,out  = decode_skip(fp, [1])
 				print_decrypt(out)
-		for i in range(65):
+
+		blocks,out  = decode(fp, [])
+		print_decrypt(out)
+		for i in range(int(blocks[0])):
+			unk,out  = decode(fp, [0])
+			print_decrypt(out)
+
+		for k in range(int(blocks[0])):
 			blocks,out  = decode(fp, [])
 			print_decrypt(out)
-			for j in range(int(blocks[0])):
-				n = int(blocks[j+1])
-				for j in range(n):
+			for i in range(int(blocks[1])):
+				blocks,out  = decode(fp, [])
+				print_decrypt(out)
+				for j in range(int(blocks[1])):
 					unk,out  = decode(fp, [0])
 					print_decrypt(out)
 					if (int(unk[2])==1):
@@ -211,19 +222,12 @@ def decode_chipdb(argv):
 					else:
 						unk,out  = decode(fp, [1,5])
 					print_decrypt(out)
-					
-		blocks,out  = decode(fp, [])
-		print_decrypt(out)
-		for i in range(int(blocks[0])):
-			unk,out  = decode(fp, [0])
-			print_decrypt(out)
-
 		blocks,out  = decode(fp, [])
 		print_decrypt(out)
 		for i in range(int(blocks[0])):
 			unk,out  = decode_skip(fp, [0])
 			print_decrypt(out)
-		
+
 		blocks,out  = decode(fp, [])
 		print_decrypt(out)
 		assert blocks[0]=="pack"
@@ -240,8 +244,14 @@ def decode_chipdb(argv):
 		for i in range(int(blocks[1])):
 			unk,out  = decode(fp, [0,1])
 			print_decrypt(out)
+			unk,out  = decode(fp, [])
+			print_decrypt(out)
+			unk,out  = decode(fp, [])
+			print_decrypt(out)
 		for i in range(int(blocks[2])):
 			unk,out  = decode(fp, [0,1])
+			print_decrypt(out)
+			unk,out  = decode(fp, [])
 			print_decrypt(out)
 			unk,out  = decode(fp, [])
 			print_decrypt(out)
@@ -250,7 +260,7 @@ def decode_chipdb(argv):
 		for i in range(int(blocks[3])):
 			unk,out  = decode(fp, [0])
 			print_decrypt(out)
-			k = int(unk[2])
+			k = int(unk[4])
 			unk,out  = decode(fp, [])
 			print_decrypt(out)
 			unk,out  = decode(fp, [])
@@ -263,7 +273,10 @@ def decode_chipdb(argv):
 			empty,out  = decode(fp, [])
 			print_decrypt(out)
 			assert len(empty)==0
-			
+
+		empty,out  = decode(fp, [])
+		print_decrypt(out)
+		assert len(empty)==0
 		blocks,out  = decode(fp, [0])
 		print_decrypt(out)
 		assert blocks[0]=="bcc_info"
@@ -293,20 +306,32 @@ def decode_chipdb(argv):
 					}
 					bits[unk[0]] = current_item
 					n1 = int(unk[9])
-					unk,out  = decode(fp, [])
-					print_decrypt(out)
-					print_decrypt_tofile(f, out)
-					unk,out  = decode(fp, [])
-					print_decrypt(out)
-					print_decrypt_tofile(f, out)
+					n2 = int(unk[10])
+					n3 = int(unk[11])
+					
 					for l in range(n1):
+						unk,out  = decode(fp, [])
+						print_decrypt(out)
+						print_decrypt_tofile(f, out)
+					empty,out  = decode(fp, [])
+					print_decrypt(out)
+					assert len(empty)==0
+					for l in range(n2):
+						unk,out  = decode(fp, [])
+						print_decrypt(out)
+						print_decrypt_tofile(f, out)
+					empty,out  = decode(fp, [])
+					print_decrypt(out)
+					assert len(empty)==0
+
+					for l in range(n3):
 						unk,out  = decode(fp, [1])
 						print_decrypt(out)
 						print_decrypt_tofile(f, out)
 					empty,out  = decode(fp, [])
 					print_decrypt(out)
-					print_decrypt_tofile(f, out)
 					assert len(empty)==0
+					
 			bcc_info[bcc_name] = bits
 			empty,out  = decode(fp, [])
 			print_decrypt(out)
