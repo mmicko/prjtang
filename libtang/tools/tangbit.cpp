@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
         if (vm.count("bits")) {
             bitstream.extract_bits();
         }
-    } catch (BitstreamParseError e) {
+    } catch (BitstreamParseError &e) {
         cerr << e.what() << endl;
     }
     return 0;
