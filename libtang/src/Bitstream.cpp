@@ -524,7 +524,7 @@ void Bitstream::write_svf(std::ostream &file)
     file << "RUNTEST 15 TCK;" << std::endl;
 
     size_t count = 0;
-    for (auto const block : blocks) {
+    for (auto const &block : blocks) {
         count += block.size();
     }
     // Begin of bitstream data
