@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         cerr << "Project Tang - Open Source Tools for Anlogic FPGAs" << endl;
         cerr << "tangbit: Anlogic bitstream converter" << endl;
         cerr << endl;
-        cerr << "Copyright (C) 2018 Miodrag Milanovic <miodrag@symbioticeda.com>" << endl;
+        cerr << "Copyright (C) 2018 Miodrag Milanovic <mmicko@gmail.com>" << endl;
         cerr << endl;
         cerr << options << endl;
         return vm.count("help") ? 0 : 1;
