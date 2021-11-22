@@ -98,6 +98,7 @@ def decode_chipdb(argv):
 		decrypt = open(file_paths["decrypt"], "wt")
 
 	with open(dbfile) as fp:
+		global info
 		info = []
 		# First line contain encryption key
 		items, out  = decode(fp, [])
