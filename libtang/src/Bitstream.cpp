@@ -238,6 +238,8 @@ void Bitstream::parse_block(const std::vector<uint8_t> &data)
     case 0xaa:
         if (data[1] == 0x00) {
             data_blocks = (data[2] << 8) + data[3];
+            if (verbose)
+                printf("0xaa FRAMES:%d\n", (data[2] * 256 + data[3]));
         }
         break;
     case 0xac:
