@@ -73,6 +73,7 @@ CRC algorithm used is: CRC-16/BUYPASS
 
 
 Family : AL3
+------------
 
 FRAMES:1075 BYTES_PER_FRAME:257 (2056 bits) BYTES_PER_MEM_FRAME:1152 (9216 bits)
 
@@ -96,10 +97,11 @@ FRAMES:1075 BYTES_PER_FRAME:257 (2056 bits) BYTES_PER_MEM_FRAME:1152 (9216 bits)
 | AL3A10NG88    | al3_s10   | QFN88           | 12006c31 *  |
 +---------------+-----------+-----------------+-------------+
 
-* device id not written in bitstream at all
+`*` device id not written in bitstream at all
 
 
 Family : EF1
+------------
 
 +--------------+-----------+-----------------+-------------+
 | Device       | Part      | Package         | Device ID   |
@@ -121,6 +123,7 @@ Family : EF1
 
 
 Family : EF2 
+------------
 
 FRAMES:765 BYTES_PER_FRAME:204 (1632 bits) BYTES_PER_MEM_FRAME:1152 (9216 bits)
 
@@ -151,6 +154,7 @@ FRAMES:765 BYTES_PER_FRAME:204 (1632 bits) BYTES_PER_MEM_FRAME:1152 (9216 bits)
 +--------------+-----------+-----------------+-------------+
 
 Family : EF3
+------------
 
 ef3_1 and ef3_2
 FRAMES:765 BYTES_PER_FRAME:204 (1632 bits) BYTES_PER_MEM_FRAME:1152 (9216 bits)
@@ -173,6 +177,7 @@ FRAMES:1046 BYTES_PER_FRAME:286 (2288 bits) BYTES_PER_MEM_FRAME:1152 (9216 bits)
 +--------------+-----------+-----------------+-------------+
 
 Family : EG4
+------------
 
 FRAMES:1259 BYTES_PER_FRAME:488 (3904 bits) BYTES_PER_MEM_FRAME:1152 (9216 bits)
 
