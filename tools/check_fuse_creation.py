@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-For each architecture and part, decrypt all data and save it to raw file
+For each family and device, decrypt all data and save it to raw file
 """
 
 import argparse, sys, os
@@ -55,8 +55,8 @@ def main(argv):
 		help="Anlogic bitstream generated .bits file")
 	parser.add_argument("log_file", metavar="<log_file>.log", nargs="?",
 		help="Anlogic bitstream generated .log file")
-	parser.add_argument('part', type=str,
-		help="FPGA part (e.g. eagle_s20)")
+	parser.add_argument('device', type=str,
+		help="FPGA device (e.g. eagle_s20)")
 	args = parser.parse_args(argv[1:])	
 	log_file = args.log_file
 	bits_file = args.bits_file
@@ -73,8 +73,8 @@ def main(argv):
 		sys.exit()
 
 	tang_root = database.get_tangdinasty_root()
-	chipdb = os.path.join(tang_root, "arch", args.part + ".db") 
-	unlogic.decode_chipdb(["decrypt_all", chipdb, "--datadir", os.path.join("work_decrypt",args.part)])
+	chipdb = os.path.join(tang_root, "arch", args.device + ".db") 
+	unlogic.decode_chipdb(["decrypt_all", chipdb, "--datadir", os.path.join("work_decrypt",args.device)])
 	print()
 	extract_elements(bits_file,log_file)
 

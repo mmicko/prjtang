@@ -1,7 +1,7 @@
 {
-    "architectures": {
+    "families": {
         "eg4": {
-            "parts": {
+            "devices": {
                 "eagle_15": {
                     "packages": [
                         "BGA256X",
@@ -41,7 +41,7 @@
             }
         },
         "ef1": {
-            "parts": {
+            "devices": {
                 "elf_3": {
                     "packages": [
                         "LXLQFP100",
@@ -71,7 +71,7 @@
             }
         },
         "ef2": {
-            "parts": {
+            "devices": {
                 "ef2_1": {
                     "packages": [
                         "EF2L15LG100B",
@@ -122,7 +122,7 @@
             }
         },
         "ef3": {
-            "parts": {
+            "devices": {
                 "ef3_1": {
                     "packages": [
                         "EF3L15CG256B"
@@ -167,7 +167,7 @@
             }
         },
         "al3": {
-            "parts": {
+            "devices": {
                 "al3_6": {
                     "packages": [
                         "LQFP144",

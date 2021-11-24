@@ -32,16 +32,16 @@ def get_db_root():
         return path.join(get_tang_root(), "database")
 
 
-def get_db_subdir(architecture = None, part = None, package = None):
+def get_db_subdir(family = None, device = None, package = None):
     """
-    Return the DB subdirectory corresponding to a architecture, part and
+    Return the DB subdirectory corresponding to a family, device and
     package (all if applicable), creating it if it doesn't already
     exist.
     """
     subdir = get_db_root()
     if not path.exists(subdir):
         os.mkdir(subdir)
-    dparts = [architecture, part, package]
+    dparts = [family, device, package]
     for dpart in dparts:
         if dpart is None:
             break
@@ -51,11 +51,11 @@ def get_db_subdir(architecture = None, part = None, package = None):
     return subdir
 
 
-def get_tilegrid(architecture, part):
+def get_tilegrid(family, device):
     """
-    Return the deserialised tilegrid for a architecture, part
+    Return the deserialised tilegrid for a family, device
     """
-    tgjson = path.join(get_db_subdir(architecture, part), "tilegrid.json")
+    tgjson = path.join(get_db_subdir(family, device), "tilegrid.json")
     with open(tgjson, "r") as f:
         return json.load(f)
 

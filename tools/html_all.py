@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-For each architecture and part, create tilegrid html
+For each family and device, create tilegrid html
 """
 
 import os, time
@@ -43,15 +43,15 @@ def main():
 	build_dt = time.strftime('%Y-%m-%d %H:%M:%S')
 
 	docs_toc = ""
-	for architecture in sorted(devices["architectures"].keys()):
-		print("Architecture: " + architecture)
-		docs_toc += "<h3>{} Architecture</h3>".format(architecture.upper())
+	for family in sorted(devices["families"].keys()):
+		print("Family: " + family)
+		docs_toc += "<h3>{} Family</h3>".format(family.upper())
 		docs_toc += "<h4>Bitstream Documentation</h4>"
 		docs_toc += "<ul>"
-		for part in sorted(devices["architectures"][architecture]["parts"].keys()):
-			print("Part: " + part)
-			docs_toc += '<li><a href="{}">{} Documentation</a></li>'.format('{}.html'.format(part),part.upper())
-			html_tilegrid.main(["html_tilegrid", architecture,  part, path.join("work_html",part + ".html")])
+		for device in sorted(devices["families"][family]["devices"].keys()):
+			print("Device: " + device)
+			docs_toc += '<li><a href="{}">{} Documentation</a></li>'.format('{}.html'.format(device),device.upper())
+			html_tilegrid.main(["html_tilegrid", family,  device, path.join("work_html",device + ".html")])
 		docs_toc += "</ul>"
 	index_html = Template(tang_docs_index).substitute(
 		datetime=build_dt,

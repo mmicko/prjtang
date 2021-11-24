@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-For each architecture and part, decrypt all data and save it to raw file
+For each family and device, decrypt all data and save it to raw file
 """
 
 import os
@@ -17,16 +17,16 @@ def main():
 	shutil.rmtree("work_decrypt", ignore_errors=True)
 	os.mkdir("work_decrypt")
 	print("Decrypting all chipdb files...")
-	for architecture in devices["architectures"].keys():
-		print("Architecture: " + architecture)
-		for part in devices["architectures"][architecture]["parts"].keys():
-			print("Part: " + part)
-			selected_part = devices["architectures"][architecture]["parts"][part]
-			package = selected_part["packages"][0]
-			os.mkdir(path.join("work_decrypt",part))
-			unc_file = path.join("work_decrypt", part + ".unc")
-			chipdb = path.join(tang_root, "arch", part + ".db") 
-			unlogic.decode_chipdb(["decrypt_all", chipdb, "--decrypt", unc_file, "--datadir", path.join("work_decrypt",part)])
+	for family in devices["families"].keys():
+		print("Family: " + family)
+		for device in devices["families"][family]["devices"].keys():
+			print("Device: " + device)
+			selected_device = devices["families"][family]["devices"][device]
+			package = selected_device["packages"][0]
+			os.mkdir(path.join("work_decrypt",device))
+			unc_file = path.join("work_decrypt", device + ".unc")
+			chipdb = path.join(tang_root, "arch", device + ".db") 
+			unlogic.decode_chipdb(["decrypt_all", chipdb, "--decrypt", unc_file, "--datadir", path.join("work_decrypt",device)])
 
 if __name__ == "__main__":
 	main()

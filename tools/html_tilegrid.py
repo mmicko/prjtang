@@ -7,10 +7,10 @@ import argparse
 import database
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('architecture', type=str,
-					help="FPGA architecture (e.g. eg4)")
-parser.add_argument('part', type=str,
-					help="FPGA part (e.g. eagle_s20)")
+parser.add_argument('family', type=str,
+					help="FPGA family (e.g. eg4)")
+parser.add_argument('device', type=str,
+					help="FPGA device (e.g. eagle_s20)")
 parser.add_argument('outfile', type=argparse.FileType('w'),
 					help="output HTML file")
 
@@ -40,8 +40,8 @@ def get_colour(ttype):
 
 def main(argv):
 	args = parser.parse_args(argv[1:])
-	tilegrid = database.get_tilegrid(args.architecture, args.part)
-	device_info = database.get_devices()["architectures"][args.architecture]["parts"][args.part]
+	tilegrid = database.get_tilegrid(args.family, args.device)
+	device_info = database.get_devices()["families"][args.family]["devices"][args.device]
 
 	max_row = device_info["max_row"]
 	max_col = device_info["max_col"]
@@ -68,7 +68,7 @@ def main(argv):
 			<body>
 			<h1>{} Tilegrid</h1>
 			<table style='font-size: 8pt; border: 2px solid black; text-align: center'>
-		""".format(args.part.upper(), args.part.upper()), file=f)
+		""".format(args.device.upper(), args.device.upper()), file=f)
 	for trow in tiles:
 		print("<tr>", file=f)
 		row_max_height = 0
