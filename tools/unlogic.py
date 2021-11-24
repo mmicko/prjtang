@@ -376,14 +376,15 @@ def decode_chipdb(argv):
 				row2.append([])
 			info.append(row2)
 		bl = int(blocks[8])
-		bl2 = int(blocks[7])		
+		bl2 = int(blocks[7])
+		total_num = 0		
 		for i in range(max_row*max_col):
 			unk,out  = decode(fp, [])
 			print_decrypt(out)
 			x = int(unk[0])
 			y = int(unk[1])
 			num = int(unk[2])
-			
+			total_num += num
 			tile_val = []
 			global inst
 			info[y][x] = dict()
@@ -418,7 +419,7 @@ def decode_chipdb(argv):
 				"val": tile_val
 			}
 			tiles[y][x] = current_tile
-
+		assert(total_num == bl2)
 		empty,out  = decode(fp, [])
 		print_decrypt(out)
 		assert len(empty)==0

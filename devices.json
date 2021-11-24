@@ -8,7 +8,10 @@
                         "BGA256A"
                     ],
                     "max_col": 41,
-                    "max_row": 72
+                    "max_row": 72,
+                    "frames": 1259,
+                    "bits_per_frame": 3892,
+                    "gap": 0
                 },
                 "eagle_20": {
                     "packages": [
@@ -17,7 +20,10 @@
                         "QFN88"
                     ],
                     "max_col": 41,
-                    "max_row": 72
+                    "max_row": 72,
+                    "frames": 1259,
+                    "bits_per_frame": 3892,
+                    "gap": 0
                 },
                 "eagle_s20": {
                     "packages": [
@@ -27,7 +33,10 @@
                         "CG324"
                     ],
                     "max_col": 41,
-                    "max_row": 72
+                    "max_row": 72,
+                    "frames": 1259,
+                    "bits_per_frame": 3892,
+                    "gap": 0
                 }
             }
         },
@@ -40,7 +49,11 @@
                         "AMLQFP44"
                     ],
                     "max_col": 10,
-                    "max_row": 9
+                    "max_row": 9,
+                    "frames": 154,
+                    "bits_per_frame": 685,
+                    "gap": 0
+
                 },
                 "elf_6": {
                     "packages": [
@@ -50,7 +63,10 @@
                         "AMLQFP144"
                     ],
                     "max_col": 10,
-                    "max_row": 9
+                    "max_row": 9,
+                    "frames": 154,
+                    "bits_per_frame": 685,
+                    "gap": 0
                 }
             }
         },
@@ -63,7 +79,10 @@
                         "EF2L15BG256B"
                     ],
                     "max_col": 25,
-                    "max_row": 30
+                    "max_row": 30,
+                    "frames": 765,
+                    "bits_per_frame": 1622,
+                    "gap": 0
                 },
                 "ef2_2": {
                     "packages": [
@@ -71,7 +90,10 @@
                         "EF2L25BG256B"
                     ],
                     "max_col": 25,
-                    "max_row": 30
+                    "max_row": 30,
+                    "frames": 765,
+                    "bits_per_frame": 1622,
+                    "gap": 0
                 },
                 "ef2_4": {
                     "packages": [
@@ -82,14 +104,20 @@
                         "EF2M45VG81C"
                     ],
                     "max_col": 25,
-                    "max_row": 30
+                    "max_row": 30,
+                    "frames": 765,
+                    "bits_per_frame": 1622,
+                    "gap": 0
                 },
                 "ef2_s4": {
                     "packages": [
                         "EF2S45VG81C"
                     ],
                     "max_col": 25,
-                    "max_row": 30
+                    "max_row": 30,
+                    "frames": 765,
+                    "bits_per_frame": 1622,
+                    "gap": 0
                 }
             }
         },
@@ -100,14 +128,20 @@
                         "EF3L15CG256B"
                     ],
                     "max_col": 25,
-                    "max_row": 30
+                    "max_row": 30,
+                    "frames": 765,
+                    "bits_per_frame": 1622,
+                    "gap": 0
                 },
                 "ef3_2": {
                     "packages": [
                         "EF3L25CG256B"
                     ],
                     "max_col": 25,
-                    "max_row": 30
+                    "max_row": 30,
+                    "frames": 765,
+                    "bits_per_frame": 1622,
+                    "gap": 0
                 },
                 "ef3_4": {
                     "packages": [
@@ -115,14 +149,20 @@
                         "EF3L40CG324B"
                     ],
                     "max_col": 34,
-                    "max_row": 42
+                    "max_row": 42,
+                    "frames": 1046,
+                    "bits_per_frame": 2282,
+                    "gap": 0
                 },
                 "ef3_9": {
                     "packages": [
                         "EF3L90CG400B"
                     ],
                     "max_col": 34,
-                    "max_row": 42
+                    "max_row": 42,
+                    "frames": 1046,
+                    "bits_per_frame": 2282,
+                    "gap": 0
                 }
             }
         },
@@ -134,7 +174,10 @@
                         "BGA256"
                     ],
                     "max_col": 35,
-                    "max_row": 38
+                    "max_row": 38,
+                    "frames": 1075,
+                    "bits_per_frame": 2052,
+                    "gap": 64
                 },
                 "al3_10": {
                     "packages": [
@@ -143,7 +186,10 @@
                         "BGA256B"
                     ],
                     "max_col": 35,
-                    "max_row": 38
+                    "max_row": 38,
+                    "frames": 1075,
+                    "bits_per_frame": 2052,
+                    "gap": 64
                 },
                 "al3_s10": {
                     "packages": [
@@ -151,7 +197,10 @@
                         "QFN88"
                     ],
                     "max_col": 35,
-                    "max_row": 38
+                    "max_row": 38,
+                    "frames": 1075,
+                    "bits_per_frame": 2052,
+                    "gap": 64
                 }
             }
         }
