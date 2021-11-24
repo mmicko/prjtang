@@ -179,6 +179,10 @@ def decode_chipdb(argv):
 				print_decrypt(out)
 		for i in range(16):
 			unk,out  = decode(fp, [])
+			assert(0 == int(unk[0]))
+			assert(0 == int(unk[1]))
+			assert(0 == int(unk[2]))
+			assert(0 == int(unk[3]))
 			print_decrypt(out)
 			num = int(unk[4])
 			for j in range(num):
@@ -190,6 +194,10 @@ def decode_chipdb(argv):
 			assert int(unk[0])==i+1 or int(unk[0])==i
 			print_decrypt(out)
 			unk,out  = decode(fp, [])
+			assert(0 == int(unk[0]))
+			assert(0 == int(unk[1]))
+			assert(0 == int(unk[2]))
+			assert(0 == int(unk[3]))
 			print_decrypt(out)
 			num = int(unk[4])
 			for j in range(num):
@@ -197,6 +205,10 @@ def decode_chipdb(argv):
 				print_decrypt(out)
 		for i in range(9):
 			unk,out  = decode(fp, [])
+			assert(0 == int(unk[0]))
+			assert(0 == int(unk[1]))
+			assert(0 == int(unk[2]))
+			assert(0 == int(unk[3]))
 			print_decrypt(out)
 			num = int(unk[4])
 			for j in range(num):
@@ -223,12 +235,15 @@ def decode_chipdb(argv):
 					else:
 						unk,out  = decode(fp, [1,5])
 					print_decrypt(out)
+
+		# architecture
 		blocks,out  = decode(fp, [])
 		print_decrypt(out)
 		for i in range(int(blocks[0])):
 			unk,out  = decode_skip(fp, [0])
 			print_decrypt(out)
 
+		# xml
 		blocks,out  = decode(fp, [])
 		print_decrypt(out)
 		assert blocks[0]=="pack"
@@ -239,6 +254,7 @@ def decode_chipdb(argv):
 		print_decrypt(out)
 		assert blocks[0]=="kcap"
 
+		# timing lib
 		blocks,out  = decode(fp, [0])
 		print_decrypt(out)
 		assert blocks[0]=="TimingLib"
@@ -278,6 +294,8 @@ def decode_chipdb(argv):
 		empty,out  = decode(fp, [])
 		print_decrypt(out)
 		assert len(empty)==0
+
+		# bitstream cell type info
 		blocks,out  = decode(fp, [0])
 		print_decrypt(out)
 		assert blocks[0]=="bcc_info"
@@ -340,6 +358,8 @@ def decode_chipdb(argv):
 		empty,out  = decode(fp, [])
 		print_decrypt(out)
 		assert len(empty)==0
+
+		# bitstream top info
 		blocks,out  = decode(fp, [0])
 		print_decrypt(out)
 		assert blocks[0]=="bil_info"
@@ -402,6 +422,8 @@ def decode_chipdb(argv):
 		empty,out  = decode(fp, [])
 		print_decrypt(out)
 		assert len(empty)==0
+
+		# bel types
 		for i in range(bl):
 			unk,out  = decode(fp, [0])
 			print_decrypt(out)
