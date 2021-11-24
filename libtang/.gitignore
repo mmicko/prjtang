@@ -13,4 +13,18 @@ CMakeCache.txt
 *.so
 *.dll
 *.a
+*.cbp
+install_manifest.txt
 tangbit
+tangunpack
+*~
+generated/
+
+# Windows
+tangbit.exe
+tangunpack.exe
+
+# Ninja
+.ninja_*
+build.ninja
+rules.ninja

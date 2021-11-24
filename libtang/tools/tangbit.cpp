@@ -3,7 +3,8 @@
 #include <iomanip>
 #include <iostream>
 #include <streambuf>
-
+#include "version.hpp"
+#include "wasmexcept.hpp"
 #include "Bitstream.hpp"
 
 using namespace std;
@@ -42,9 +43,10 @@ int main(int argc, char *argv[])
     if (vm.count("help")) {
     help:
         cerr << "Project Tang - Open Source Tools for Anlogic FPGAs" << endl;
-        cerr << "tangbit: Anlogic bitstream converter" << endl;
+        cerr << "Version " << git_describe_str << endl;
+        cerr << argv[0] << ": Anlogic bitstream converter" << endl;
         cerr << endl;
-        cerr << "Copyright (C) 2018 Miodrag Milanovic <mmicko@gmail.com>" << endl;
+        cerr << "Copyright (C) 2021 Miodrag Milanovic <mmicko@gmail.com>" << endl;
         cerr << endl;
         cerr << options << endl;
         return vm.count("help") ? 0 : 1;
