@@ -47,6 +47,12 @@ def decode(fp, ids):
 	out = " ".join(items)
 	return items,out
 
+def decode_items(items, ids):
+	for i in range(len(ids)):
+		items[ids[i]] = decode_string(items[ids[i]])
+	out = " ".join(items)
+	return items,out
+
 def decode_skip(fp, ids):
 	items = fp.readline().split()
 	for i in range(len(items)):
@@ -91,7 +97,7 @@ def decode_chipdb(argv):
 	global keypos
 	keypos = 0
 	key = ""
-
+	is_ph1 = False
 	tiles = []
 
 	if "decrypt" in file_paths.keys():
@@ -106,10 +112,12 @@ def decode_chipdb(argv):
 
 		key = items[1]
 		arch = int(items[2])
+		if (key=="ph1_100"):
+			is_ph1 = True
 
 		for i in range(arch):
 			# arch names
-			items,out  = decode(fp, [0])
+			items,out  = decode(fp, [0])			
 			print_decrypt(out)
 		for i in range(arch):
 			# eagle_20 NONE NONE 8 8 41 72 2450 64 29 16 0 2
@@ -210,7 +218,7 @@ def decode_chipdb(argv):
 			for j in range(num):
 				unk,out  = decode_skip(fp, [1])
 				print_decrypt(out)
-		for i in range(9):
+		for i in range(19 if is_ph1 else 9):
 			unk,out  = decode(fp, [])
 			assert(0 == int(unk[0]))
 			assert(0 == int(unk[1]))
@@ -220,6 +228,54 @@ def decode_chipdb(argv):
 			num = int(unk[4])
 			for j in range(num):
 				unk,out  = decode_skip(fp, [1])
+				print_decrypt(out)
+
+		if is_ph1:
+			unk,out  = decode(fp, [])
+			print_decrypt(out)
+			for i in range(2):
+				unk,out  = decode(fp, [])
+				print_decrypt(out)
+				unk,out  = decode(fp, [])
+				assert(0 == int(unk[0]))
+				assert(0 == int(unk[1]))
+				assert(0 == int(unk[2]))
+				assert(0 == int(unk[3]))
+				print_decrypt(out)
+				num = int(unk[4])
+				for j in range(num):
+					unk,out  = decode_skip(fp, [1])
+					print_decrypt(out)
+			unk,out  = decode(fp, [])
+			print_decrypt(out)
+			for i in range(2):
+				unk,out  = decode(fp, [])
+				print_decrypt(out)
+				unk,out  = decode(fp, [])
+				assert(0 == int(unk[0]))
+				assert(0 == int(unk[1]))
+				assert(0 == int(unk[2]))
+				assert(0 == int(unk[3]))
+				print_decrypt(out)
+				num = int(unk[4])
+				for j in range(num):
+					unk,out  = decode_skip(fp, [1])
+					print_decrypt(out)
+			for i in range(5):
+				unk,out  = decode(fp, [])
+				assert(0 == int(unk[0]))
+				assert(0 == int(unk[1]))
+				assert(0 == int(unk[2]))
+				assert(0 == int(unk[3]))
+				print_decrypt(out)
+				num = int(unk[4])
+				for j in range(num):
+					unk,out  = decode_skip(fp, [1])
+					print_decrypt(out)
+			blocks,out  = decode(fp, [])
+			print_decrypt(out)
+			for i in range(int(blocks[0])):
+				unk,out  = decode(fp, [0])
 				print_decrypt(out)
 
 		blocks,out  = decode(fp, [])
@@ -239,8 +295,10 @@ def decode_chipdb(argv):
 					print_decrypt(out)
 					if (int(unk[2])==1):
 						unk,out  = decode(fp, [1])
-					else:
+					elif (int(unk[2])==2):
 						unk,out  = decode(fp, [1,5])
+					elif (int(unk[2])==3):
+						unk,out  = decode(fp, [1,5,9])
 					print_decrypt(out)
 
 		# architecture
@@ -298,9 +356,28 @@ def decode_chipdb(argv):
 			print_decrypt(out)
 			assert len(empty)==0
 
-		empty,out  = decode(fp, [])
-		print_decrypt(out)
-		assert len(empty)==0
+		items = fp.readline().split()
+		if len(items)==0:
+			empty,out  = decode_items(items, [])
+			assert len(empty)==0
+			print_decrypt(out)
+		else:
+			#pcie
+			blocks,out  = decode_items(items, [0])
+			print_decrypt(out)
+			for i in range(int(blocks[1])):
+				unk,out  = decode(fp, [0])
+				print_decrypt(out)
+			#serdes
+			blocks,out  = decode(fp, [0])
+			print_decrypt(out)
+			for i in range(int(blocks[1])):
+				unk,out  = decode(fp, [0])
+				print_decrypt(out)
+			
+			empty,out  = decode(fp, [])
+			assert len(empty)==0
+			print_decrypt(out)
 
 		# bitstream cell type info
 		blocks,out  = decode(fp, [0])

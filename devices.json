@@ -203,6 +203,22 @@
                     "gap": 64
                 }
             }
+        },
+        "ph1": {
+            "devices": {
+                "ph1": {
+                    "packages": [
+                        "PH1A100SFG676",
+                        "PH1A100SFG676X",
+                        "PH1A100CGC324"
+                    ],
+                    "max_col": 80,
+                    "max_row": 160,
+                    "frames": 3058,
+                    "bits_per_frame": 10368,
+                    "gap": 64
+                }
+            }
         }
     }
 }
