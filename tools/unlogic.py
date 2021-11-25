@@ -150,24 +150,31 @@ def decode_chipdb(argv):
 			print_decrypt(out)
 			unk,out  = decode(fp, [])
 			print_decrypt(out)
-			unk,out  = decode(fp, [])
+			
+			blk,out  = decode(fp, [])
 			print_decrypt(out)
-			unk,out  = decode(fp, [])
-			print_decrypt(out)
-			for j in range(3,49):
-				unk,out  = decode(fp, [])
+			for k in range(int(blk[1])):
+				blocks,out  = decode(fp, [])
 				print_decrypt(out)
-				assert int(unk[0])==j
-				unk,out  = decode(fp, [])
-				print_decrypt(out)
-				unk,out  = decode(fp, [])
-				print_decrypt(out)
-				items,out  = decode(fp, [])
-				print_decrypt(out)
-				for l in range(5):
-					for k in range(int(items[l])):
-						dummy,out  = decode(fp, [0])
-						print_decrypt(out)
+				for j in range(3,49):
+					unk,out  = decode(fp, [])
+					print_decrypt(out)
+					assert int(unk[0])==j
+					unk,out  = decode(fp, [])
+					print_decrypt(out)
+					unk,out  = decode(fp, [])
+					print_decrypt(out)
+					items,out  = decode(fp, [])
+					print_decrypt(out)
+					for l in range(5):
+						for k in range(int(items[l])):
+							dummy,out  = decode(fp, [0])
+							print_decrypt(out)
+				for k in range(int(blocks[8])):
+					items,out  = decode(fp, [])
+					print_decrypt(out)
+
+		# wires and pips
 		blocks, out = decode(fp, [])
 		print_decrypt(out)
 		for i in range(int(blocks[0])):
