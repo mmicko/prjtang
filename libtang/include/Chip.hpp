@@ -43,6 +43,12 @@ public:
     // The chip's configuration memory
     CRAM cram;
 
+    // Miscellaneous information
+    uint32_t usercode = 0x0;
+    uint32_t cfg1;
+    uint32_t cfg2;
+    vector<string> metadata;
+
     // Get max row and column
     int get_max_row() const;
 

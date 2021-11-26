@@ -60,7 +60,10 @@ uint32_t parse_uint32(string str) {
 DeviceLocator find_device_by_idcode(uint32_t idcode) {
     auto found = find_device_generic([idcode](const string &n, const pt::ptree &p) -> bool {
         UNUSED(n);
-        return parse_uint32(p.get<string>("idcode")) == idcode;
+        for (const pt::ptree::value_type &package : p.get_child("packages")) {
+            if (parse_uint32(package.second.get<string>("idcode")) == idcode) return true;
+        }        
+        return false;
     });
     if (!found)
         throw runtime_error("no device in database with IDCODE " + uint32_to_hexstr(idcode));

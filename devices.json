@@ -3,10 +3,10 @@
         "eg4": {
             "devices": {
                 "eagle_15": {
-                    "packages": [
-                        "BGA256X",
-                        "BGA256A"
-                    ],
+                    "packages": {
+                        "BGA256X": { "part": "EG4X15BG256", "idcode": "0x00014c35" },
+                        "BGA256A": { "part": "EG4A15BG256", "idcode": "0x0e014c35" }
+                    },
                     "max_col": 41,
                     "max_row": 72,
                     "frames": 1259,
@@ -14,11 +14,11 @@
                     "gap": 0
                 },
                 "eagle_20": {
-                    "packages": [
-                        "BGA256X",
-                        "BGA256A",
-                        "QFN88"
-                    ],
+                    "packages": {
+                        "BGA256X": { "part": "EG4X20BG256", "idcode": "0x00014c35" },
+                        "BGA256A": { "part": "EG4A20BG256", "idcode": "0x08014c35" },
+                        "QFN88":   { "part": "EG4A20NG88",  "idcode": "0x0c014c35" }
+                    },
                     "max_col": 41,
                     "max_row": 72,
                     "frames": 1259,
@@ -26,12 +26,12 @@
                     "gap": 0
                 },
                 "eagle_s20": {
-                    "packages": [
-                        "EQFP176",
-                        "BG256",
-                        "QFN88",
-                        "CG324"
-                    ],
+                    "packages": {
+                        "EQFP176": { "part": "EG4D20EG176", "idcode": "0x04014c35" },
+                        "BG256":   { "part": "EG4S20BG256", "idcode": "0x0a014c35" },
+                        "QFN88":   { "part": "EG4S20NG88",  "idcode": "0x06014c35" },
+                        "CG324":   { "part": "EG4S20CG324", "idcode": "0x02014c35" }
+                    },
                     "max_col": 41,
                     "max_row": 72,
                     "frames": 1259,
@@ -43,11 +43,11 @@
         "ef1": {
             "devices": {
                 "elf_3": {
-                    "packages": [
-                        "LXLQFP100",
-                        "AMLQFP100",
-                        "AMLQFP44"
-                    ],
+                    "packages": {
+                        "LXLQFP100": { "part": "EF1L300LG100", "idcode": "0x112d0c33" },
+                        "AMLQFP100": { "part": "EF1A300LG100", "idcode": "0x152d0c33" },
+                        "AMLQFP44":  { "part": "EF1A300LG44",  "idcode": "0x122d0c33" }
+                    },
                     "max_col": 10,
                     "max_row": 9,
                     "frames": 154,
@@ -56,12 +56,12 @@
 
                 },
                 "elf_6": {
-                    "packages": [
-                        "LXLQFP100",
-                        "LXLQFP144",
-                        "AMLQFP100",
-                        "AMLQFP144"
-                    ],
+                    "packages": {
+                        "LXLQFP100": { "part": "EF1L650LG100", "idcode": "0x012d0c33" },
+                        "LXLQFP144": { "part": "EF1L650LG144", "idcode": "0x002d0c33" },
+                        "AMLQFP100": { "part": "EF1A650LG100", "idcode": "0x052d0c33" },
+                        "AMLQFP144": { "part": "EF1A650LG144", "idcode": "0x042d0c33" }
+                    },
                     "max_col": 10,
                     "max_row": 9,
                     "frames": 154,
@@ -73,11 +73,11 @@
         "ef2": {
             "devices": {
                 "ef2_1": {
-                    "packages": [
-                        "EF2L15LG100B",
-                        "EF2L15LG144B",
-                        "EF2L15BG256B"
-                    ],
+                    "packages": {
+                        "EF2L15LG100B": { "part": "EF2L15LG100B", "idcode": "0x04004c37" },
+                        "EF2L15LG144B": { "part": "EF2L15LG144B", "idcode": "0x04004c37" },
+                        "EF2L15BG256B": { "part": "EF2L15BG256B", "idcode": "0x04004c37" }
+                    },
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
@@ -85,10 +85,10 @@
                     "gap": 0
                 },
                 "ef2_2": {
-                    "packages": [
-                        "EF2L25XG42B",
-                        "EF2L25BG256B"
-                    ],
+                    "packages": {
+                        "EF2L25XG42B":  { "part":  "EF2L25XG42B",  "idcode": "0x01004c37" },
+                        "EF2L25BG256B": { "part":  "EF2L25BG256B", "idcode": "0x01004c37" }
+                    },
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
@@ -96,13 +96,12 @@
                     "gap": 0
                 },
                 "ef2_4": {
-                    "packages": [
-                        "EF2L45LG144B",
-                        "EF2M45LG64B",
-                        "EF2L45BG256B",
-                        "EF2M45LG48B",
-                        "EF2M45VG81C"
-                    ],
+                    "packages": {
+                        "EF2L45LG144B": { "part": "EF2L45LG144B", "idcode": "0x03004c37" },
+                        "EF2L45BG256B": { "part": "EF2L45BG256B", "idcode": "0x03004c37" },
+                        "EF2M45LG64B":  { "part": "EF2M45LG64B",  "idcode": "0x00004c37" },
+                        "EF2M45LG48B":  { "part": "EF2M45LG48B",  "idcode": "0x00004c37" }
+                    },
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
@@ -110,9 +109,10 @@
                     "gap": 0
                 },
                 "ef2_s4": {
-                    "packages": [
-                        "EF2S45VG81C"
-                    ],
+                    "packages": {
+                        "EF2S45VG81C": { "part": "EF2S45VG81C", "idcode": "0x02004c37" },
+                        "EF2M45VG81C": { "part": "EF2M45VG81C", "idcode": "0x02004c37" }
+                    },
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
@@ -124,9 +124,9 @@
         "ef3": {
             "devices": {
                 "ef3_1": {
-                    "packages": [
-                        "EF3L15CG256B"
-                    ],
+                    "packages": {
+                        "EF3L15CG256B": { "part": "EF3L15CG256B", "idcode": "0x09004c37" }
+                    },
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
@@ -134,9 +134,9 @@
                     "gap": 0
                 },
                 "ef3_2": {
-                    "packages": [
-                        "EF3L25CG256B"
-                    ],
+                    "packages": {
+                        "EF3L25CG256B": { "part": "EF3L25CG256B", "idcode": "0x0a004c37" }
+                    },
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
@@ -144,10 +144,10 @@
                     "gap": 0
                 },
                 "ef3_4": {
-                    "packages": [
-                        "EF3L40CG332B",
-                        "EF3L40CG324B"
-                    ],
+                    "packages": {
+                        "EF3L40CG332B": { "part": "EF3L40CG332B", "idcode": "0x02008c3b" },
+                        "EF3L40CG324B": { "part": "EF3L40CG324B", "idcode": "0x04008c3b" }
+                    },
                     "max_col": 34,
                     "max_row": 42,
                     "frames": 1046,
@@ -155,9 +155,9 @@
                     "gap": 0
                 },
                 "ef3_9": {
-                    "packages": [
-                        "EF3L90CG400B"
-                    ],
+                    "packages": {
+                        "EF3L90CG400B": { "part": "EF3L90CG400B", "idcode": "0x00008c3b" }
+                    },
                     "max_col": 34,
                     "max_row": 42,
                     "frames": 1046,
@@ -169,10 +169,10 @@
         "al3": {
             "devices": {
                 "al3_6": {
-                    "packages": [
-                        "LQFP144",
-                        "BGA256"
-                    ],
+                    "packages": {
+                        "LQFP144": { "part": "AL3A06LG144C7", "idcode": "0x10006c31" },
+                        "BGA256":  { "part": "AL3A06BG256C7", "idcode": "0x10006c31" }
+                    },
                     "max_col": 35,
                     "max_row": 38,
                     "frames": 1075,
@@ -180,11 +180,11 @@
                     "gap": 64
                 },
                 "al3_10": {
-                    "packages": [
-                        "LQFP144",
-                        "BGA256",
-                        "BGA256B"
-                    ],
+                    "packages": {
+                        "LQFP144": { "part": "AL3A10LG144C7", "idcode": "0x18006c31" },
+                        "BGA256":  { "part": "AL3A10BG256C7", "idcode": "0x18006c31" },
+                        "BGA256B": { "part": "AL3A10BG256B",  "idcode": "0x14006c31" }
+                    },
                     "max_col": 35,
                     "max_row": 38,
                     "frames": 1075,
@@ -192,10 +192,10 @@
                     "gap": 64
                 },
                 "al3_s10": {
-                    "packages": [
-                        "LQFP144",
-                        "QFN88"
-                    ],
+                    "packages": {
+                        "LQFP144": { "part": "AL3S10LG144", "idcode": "0x12006c31" },
+                        "QFN88":   { "part": "AL3S10NG88",  "idcode": "0x12006c31" }
+                    },
                     "max_col": 35,
                     "max_row": 38,
                     "frames": 1075,
@@ -207,11 +207,10 @@
         "ph1": {
             "devices": {
                 "ph1": {
-                    "packages": [
-                        "PH1A100SFG676",
-                        "PH1A100SFG676X",
-                        "PH1A100CGC324"
-                    ],
+                    "packages": {
+                        "PH1A100SFG676":  { "part": "PH1A100SFG676",  "idcode": "0x00000000" },
+                        "PH1A100CGC324":  { "part": "PH1A100CGC324",  "idcode": "0x00000000" }
+                    },
                     "max_col": 80,
                     "max_row": 160,
                     "frames": 3058,
