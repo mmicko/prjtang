@@ -40,17 +40,8 @@ enum class BitstreamCommand : uint8_t {
     ZERO = 0x00
 };
 
-// The BitstreamReadWriter class stores state (including CRC16) whilst reading
-// the bitstream
-class BitstreamReadWriter {
+class Crc16 {
 public:
-    BitstreamReadWriter() : data(), iter(data.begin()) {};
-
-    BitstreamReadWriter(const vector<uint8_t> &data) : data(data), iter(this->data.begin()) {};
-
-    vector<uint8_t> data;
-    vector<uint8_t>::iterator iter;
-
     uint16_t crc16 = CRC16_INIT;
 
     // Add a single byte to the running CRC16 accumulator
@@ -70,12 +61,43 @@ public:
 
     }
 
+    uint16_t finalise_crc16() {
+        // item b) "push out" the last 16 bits
+        int i;
+        bool bit_flag;
+        for (i = 0; i < 16; ++i) {
+            bit_flag = bool(crc16 >> 15);
+            crc16 <<= 1;
+            if (bit_flag)
+                crc16 ^= CRC16_POLY;
+        }
+
+        return crc16;
+    }
+
+    void reset_crc16() {
+        crc16 = CRC16_INIT;
+    }
+};
+
+// The BitstreamReadWriter class stores state (including CRC16) whilst reading
+// the bitstream
+class BitstreamReadWriter {
+public:
+    BitstreamReadWriter() : data(), iter(data.begin()) {};
+
+    BitstreamReadWriter(const vector<uint8_t> &data) : data(data), iter(this->data.begin()) {};
+
+    vector<uint8_t> data;
+    vector<uint8_t>::iterator iter;
+    Crc16 crc16;
+
     // Return a single byte and update CRC
     inline uint8_t get_byte() {
         assert(iter < data.end());
         uint8_t val = *(iter++);
         //cerr << hex << setw(2) << int(val) << endl;
-        update_crc16(val);
+        crc16.update_crc16(val);
         return val;
     }
 
@@ -91,14 +113,14 @@ public:
         assert(iter < data.end());
         uint8_t val = *(iter++);
         BitstreamCommand cmd = BitstreamCommand(val);
-        update_crc16(val);
+        crc16.update_crc16(val);
         return cmd;
     }
 
     // Write a single byte and update CRC
     inline void write_byte(uint8_t b) {
         data.push_back(b);
-        update_crc16(b);
+        crc16.update_crc16(b);
     }
 
     // Copy multiple bytes into an OutputIterator and update CRC
@@ -189,24 +211,6 @@ public:
         return true;
     }
 
-    uint16_t finalise_crc16() {
-        // item b) "push out" the last 16 bits
-        int i;
-        bool bit_flag;
-        for (i = 0; i < 16; ++i) {
-            bit_flag = bool(crc16 >> 15);
-            crc16 <<= 1;
-            if (bit_flag)
-                crc16 ^= CRC16_POLY;
-        }
-
-        return crc16;
-    }
-
-    void reset_crc16() {
-        crc16 = CRC16_INIT;
-    }
-
     // Get the offset into the bitstream
     size_t get_offset() {
         return size_t(distance(data.begin(), iter));
@@ -215,7 +219,7 @@ public:
     // Check the calculated CRC16 against an actual CRC16, expected in the next 2 bytes
     void check_crc16() {
         uint8_t crc_bytes[2];
-        uint16_t actual_crc = finalise_crc16();
+        uint16_t actual_crc = crc16.finalise_crc16();
         get_bytes(crc_bytes, 2);
         // cerr << hex << int(crc_bytes[0]) << " " << int(crc_bytes[1]) << endl;
         uint16_t exp_crc = (crc_bytes[0] << 8) | crc_bytes[1];
@@ -224,15 +228,15 @@ public:
             err << "crc fail, calculated 0x" << hex << actual_crc << " but expecting 0x" << exp_crc;
             throw BitstreamParseError(err.str(), get_offset());
         }
-        reset_crc16();
+        crc16.reset_crc16();
     }
 
     // Insert the calculated CRC16 into the bitstream, and then reset it
     void insert_crc16() {
-        uint16_t actual_crc = finalise_crc16();
+        uint16_t actual_crc = crc16.finalise_crc16();
         write_byte(uint8_t((actual_crc >> 8) & 0xFF));
         write_byte(uint8_t((actual_crc) & 0xFF));
-        reset_crc16();
+        crc16.reset_crc16();
     }
 
     bool is_end() {
@@ -292,6 +296,8 @@ Chip Bitstream::deserialise_chip()
     BitstreamReadWriter rd(data);
     boost::optional<Chip> chip;
 
+    Crc16 data_crc16;
+
     bool found_preamble = rd.find_preamble(preamble);
 
     if (!found_preamble)
@@ -299,7 +305,7 @@ Chip Bitstream::deserialise_chip()
 
     while (!rd.is_end()) {
         uint16_t block_size = rd.get_block_size();
-        
+        rd.crc16.reset_crc16();
         BitstreamCommand cmd = rd.get_command_opcode();
         if (cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO && cmd!=BitstreamCommand::MEMORY_DATA) {
             uint8_t flag = rd.get_byte();
@@ -316,7 +322,7 @@ Chip Bitstream::deserialise_chip()
             case BitstreamCommand::RESET_CRC:
                 BITSTREAM_DEBUG("reset crc");
                 rd.get_uint16();
-                rd.reset_crc16();
+                data_crc16.reset_crc16();
                 break;
             case BitstreamCommand::DEVICEID: {
                 uint32_t id = rd.get_uint32();
@@ -384,16 +390,29 @@ Chip Bitstream::deserialise_chip()
                 uint16_t frames = rd.get_uint16();
                 uint16_t bytes_per_frame = chip->info.bits_per_frame / 8L;
                 unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bytes_per_frame);
+                // taking current CRC16
+                data_crc16.crc16 = rd.crc16.crc16;
                 for (int idx = 0; idx < frames; idx++) {
                     block_size = rd.get_block_size();
                     rd.get_bytes(frame_bytes.get(), bytes_per_frame);
-                    rd.get_uint16(); // crc
+                    // Update CRC16 for complete frame
+                    for (size_t i = 0; i < bytes_per_frame; i++) {
+                        data_crc16.update_crc16(frame_bytes[i]);
+                    }
+                    uint16_t actual_crc = data_crc16.finalise_crc16();
+                    uint16_t exp_crc = rd.get_uint16(); // crc 
+                    if (actual_crc != exp_crc) {
+                        ostringstream err;
+                        err << "crc fail, calculated 0x" << hex << actual_crc << " but expecting 0x" << exp_crc;
+                        throw BitstreamParseError(err.str());
+                    }
+                                      
                     if (rd.get_uint32()) 
                         throw BitstreamParseError("error parsing fuse data");
                     for (uint32_t j = 0; j < chip->info.bits_per_frame; j++) {
-                        //chip->cram.bit(idx, j) = (char) ((frame_bytes[(bytes_per_frame - 1) - (j / 8)] >> (j % 8)) & 0x01);
                         chip->cram.bit(idx, j) = (char) ((frame_bytes[(j / 8)]<< (j % 8)) & 0x80);
-                    }    
+                    }
+                    data_crc16.reset_crc16();    
                 }
                 // zero block
                 block_size = rd.get_block_size();
@@ -403,14 +422,26 @@ Chip Bitstream::deserialise_chip()
             case BitstreamCommand::MEMORY_DATA: {
                 rd.get_uint16();
                 uint8_t bram_block_id = rd.get_byte();
+                // taking current CRC16
+                data_crc16.crc16 = rd.crc16.crc16;
                 BITSTREAM_NOTE("bram_block_id 0x" << hex << setw(2) << setfill('0') << (int)bram_block_id);
                 uint16_t bram_bytes_per_frame = chip->info.bram_bits_per_frame / 8L;
-                chip->bram_data[bram_block_id].resize(bram_bytes_per_frame);
                 unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bram_bytes_per_frame);
+                chip->bram_data[bram_block_id].resize(bram_bytes_per_frame);
                 rd.get_bytes(frame_bytes.get(), bram_bytes_per_frame);
+                // Update CRC16 for complete frame
+                for (size_t i = 0; i < bram_bytes_per_frame; i++) {
+                    data_crc16.update_crc16(frame_bytes[i]);
+                }
                 for(size_t i=0;i<bram_bytes_per_frame;i++)
                     chip->bram_data[bram_block_id][i] = frame_bytes[i];
-                rd.get_uint16(); // crc16
+                uint16_t actual_crc = data_crc16.finalise_crc16();
+                uint16_t exp_crc = rd.get_uint16(); // crc 
+                if (actual_crc != exp_crc) {
+                    ostringstream err;
+                    err << "crc fail, calculated 0x" << hex << actual_crc << " but expecting 0x" << exp_crc;
+                    throw BitstreamParseError(err.str());
+                }
                 rd.skip_bytes(4); // padding
                 break;
             }
@@ -424,8 +455,9 @@ Chip Bitstream::deserialise_chip()
                 BITSTREAM_FATAL("unsupported command 0x" << hex << setw(2) << setfill('0') << int(cmd), rd.get_offset());
         }
 
-        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO && cmd!=BitstreamCommand::MEMORY_DATA)
-            rd.get_uint16(); //block crc16    
+        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO && cmd!=BitstreamCommand::MEMORY_DATA) {
+            rd.check_crc16();
+        }
     }
 
     if (chip) {
