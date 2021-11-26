@@ -19,6 +19,7 @@ struct ChipInfo
     string family;
     uint16_t num_frames;
     uint32_t bits_per_frame;
+    uint32_t bram_bits_per_frame;
     int max_row;
     int max_col;
 };
@@ -47,6 +48,9 @@ public:
     uint32_t cfg1;
     uint32_t cfg2;
     vector<string> metadata;
+
+    // Block RAM initialisation
+    map<uint8_t, vector<uint8_t>> bram_data;
 
     // Get max row and column
     int get_max_row() const;

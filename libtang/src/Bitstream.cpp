@@ -342,16 +342,18 @@ Chip Bitstream::deserialise_chip()
                 uint32_t bits_per_frame = rd.get_uint16() << 3;
                 BITSTREAM_NOTE("frames " << dec << frames << " bits_per_frame " << dec << bits_per_frame);
                 BITSTREAM_NOTE("num_frames " << dec << chip->info.num_frames << " bits_per_frame " << dec << chip->info.bits_per_frame);
-                if (frames!=chip->info.num_frames)
+                if (frames != chip->info.num_frames)
                     throw BitstreamParseError("different number of frames than expected");
-                if (bits_per_frame!=chip->info.bits_per_frame)
+                if (bits_per_frame != chip->info.bits_per_frame)
                     throw BitstreamParseError("different bits per frame than expected");
                 break;
             }
             case BitstreamCommand::MEM_FRAME: {
                 rd.get_uint16();
-                uint32_t memory_bits_per_frame = rd.get_uint16() << 3;
-                BITSTREAM_NOTE("memory_bits_per_frame " << dec << memory_bits_per_frame);
+                uint32_t bram_bits_per_frame = rd.get_uint16() << 3;
+                if (bram_bits_per_frame != chip->info.bram_bits_per_frame)
+                    throw BitstreamParseError("different BRAM bits per frame than expected");
+                BITSTREAM_NOTE("bram_bits_per_frame " << dec << bram_bits_per_frame);
                 break;
             }
             case BitstreamCommand::PROGRAM_DONE:
@@ -400,10 +402,14 @@ Chip Bitstream::deserialise_chip()
             }
             case BitstreamCommand::MEMORY_DATA: {
                 rd.get_uint16();
-                uint8_t mem_block_id = rd.get_byte();
-                BITSTREAM_NOTE("mem_block_id 0x" << hex << setw(2) << setfill('0') << (int)mem_block_id);
-                uint16_t mem_bytes_per_frame = 1152;
-                rd.skip_bytes(mem_bytes_per_frame);
+                uint8_t bram_block_id = rd.get_byte();
+                BITSTREAM_NOTE("bram_block_id 0x" << hex << setw(2) << setfill('0') << (int)bram_block_id);
+                uint16_t bram_bytes_per_frame = chip->info.bram_bits_per_frame / 8L;
+                chip->bram_data[bram_block_id].resize(bram_bytes_per_frame);
+                unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bram_bytes_per_frame);
+                rd.get_bytes(frame_bytes.get(), bram_bytes_per_frame);
+                for(size_t i=0;i<bram_bytes_per_frame;i++)
+                    chip->bram_data[bram_block_id][i] = frame_bytes[i];
                 rd.get_uint16(); // crc16
                 rd.skip_bytes(4); // padding
                 break;
