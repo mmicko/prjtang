@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <map>
 #include <set>
+#include "CRAM.hpp"
 
 using namespace std;
 namespace Tang {
@@ -16,16 +17,36 @@ struct ChipInfo
 {
     string name;
     string family;
-    uint32_t idcode;
+    //uint32_t idcode;
     int num_frames;
     int bits_per_frame;
-    int pad_bits_before_frame;
-    int pad_bits_after_frame;
-    // 0-based.
     int max_row;
     int max_col;
-    // Trellis uses 0-based indexing, but some devices don't.
-    int col_bias;
+};
+
+
+class Chip
+{
+public:
+    // Construct a chip by looking up part name
+    explicit Chip(string name);
+
+    // Construct a chip by looking up device ID
+    explicit Chip(uint32_t idcode);
+
+    // Construct a chip from a ChipInfo
+    explicit Chip(const ChipInfo &info);
+
+    // Basic information about a chip
+    ChipInfo info;
+
+    // The chip's configuration memory
+    CRAM cram;
+
+    // Get max row and column
+    int get_max_row() const;
+
+    int get_max_col() const;
 };
 
 }

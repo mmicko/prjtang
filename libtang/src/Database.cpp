@@ -75,12 +75,9 @@ ChipInfo get_chip_info(const DeviceLocator &part) {
     ci.name = part.device;
     ci.num_frames = dev.get<int>("frames");
     ci.bits_per_frame = dev.get<int>("bits_per_frame");
-    ci.pad_bits_after_frame = dev.get<int>("pad_bits_after_frame");
-    ci.pad_bits_before_frame = dev.get<int>("pad_bits_before_frame");
-    ci.idcode = parse_uint32(dev.get<string>("idcode"));
+    //ci.idcode = parse_uint32(dev.get<string>("idcode"));
     ci.max_row = dev.get<int>("max_row");
     ci.max_col = dev.get<int>("max_col");
-    ci.col_bias = dev.get<int>("col_bias");
     return ci;
 }
 
@@ -106,7 +103,6 @@ vector<TileInfo> get_device_tilegrid(const DeviceLocator &part) {
             ti.device = part.device;
             ti.max_col = info.max_col;
             ti.max_row = info.max_row;
-            ti.col_bias = info.col_bias;
 
             ti.name = tile.first;
             ti.num_frames = size_t(tile.second.get<int>("cols"));

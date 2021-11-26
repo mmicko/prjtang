@@ -88,9 +88,6 @@ int main(int argc, char *argv[])
             ofstream svf_file(vm["svf"].as<string>(), ios::out | ios::trunc);
             bitstream.write_svf(svf_file);
         }
-        if (vm.count("bits")) {
-            bitstream.extract_bits();
-        }
     } catch (BitstreamParseError &e) {
         cerr << e.what() << endl;
     }

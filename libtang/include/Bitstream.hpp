@@ -24,6 +24,8 @@ class Crc16
     uint16_t update_block(const std::vector<uint8_t> &data, int start, int end);
 };
 
+class Chip;
+
 class Bitstream
 {
   public:
@@ -42,8 +44,9 @@ class Bitstream
     void write_bmk(std::ostream &file);
     void write_bma(std::ostream &file);
     void write_svf(std::ostream &file);
-    void extract_bits();
 
+    // Deserialise a bitstream to a Chip
+    Chip deserialise_chip();
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
 

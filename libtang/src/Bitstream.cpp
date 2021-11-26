@@ -1,6 +1,8 @@
 #include "Bitstream.hpp"
+#include "Chip.hpp"
 #include <bitset>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/optional.hpp>
 #include <cstring>
 #include <iostream>
 
@@ -437,27 +439,6 @@ void Bitstream::write_fuse(std::ostream &file)
     }
 }
 
-void Bitstream::extract_bits()
-{
-    int row = 0;
-    for (auto it = (blocks.begin() + fuse_start_block); it != (blocks.begin() + fuse_start_block + frames); ++it) {
-        int col = 0;
-        for (size_t pos = 0; pos < frame_bytes; pos++) {
-            uint8_t data = (*it)[pos];
-            if (data != 0x00) {
-                std::bitset<8> b(data);
-                for (int i = 7; i >= 0; i--) {
-                    if (b.test(i)) {
-                        printf("row:%d col:%d\n", row, col + 7 - i);
-                    }
-                }
-            }
-            col += 8;
-        }
-        row++;
-    }
-}
-
 uint8_t reverse_byte(uint8_t byte)
 {
     uint8_t rev = 0;
@@ -565,6 +546,220 @@ void Bitstream::write_svf(std::ostream &file)
     file << "TDR 0 ;" << std::endl;
     // Loading device with 'bypass' instruction.
     file << "SIR 8 TDI (1f) ;" << std::endl;
+}
+
+Chip Bitstream::deserialise_chip()
+{
+    boost::optional<Chip> chip;
+/*    cerr << "bitstream size: " << data.size() * 8 << " bits" << endl;
+    BitstreamReadWriter rd(data);
+    boost::optional<Chip> chip;
+    bool found_preamble = rd.find_preamble(preamble);
+    boost::optional<array<uint8_t, 8>> compression_dict;
+
+    if (!found_preamble)
+        throw BitstreamParseError("preamble not found in bitstream");
+
+    uint16_t current_ebr = 0;
+    int addr_in_ebr = 0;
+
+    while (!rd.is_end()) {
+        BitstreamCommand cmd = rd.get_command_opcode();
+        switch (cmd) {
+            case BitstreamCommand::LSC_RESET_CRC:
+                BITSTREAM_DEBUG("reset crc");
+                rd.skip_bytes(3);
+                rd.reset_crc16();
+                break;
+            case BitstreamCommand::VERIFY_ID: {
+                rd.skip_bytes(3);
+                uint32_t id = rd.get_uint32();
+                if (idcode) {
+                    BITSTREAM_NOTE("Overriding device ID from 0x" << hex << setw(8) << setfill('0') << id << " to 0x" << *idcode);
+                    id = *idcode;
+                }
+
+                BITSTREAM_NOTE("device ID: 0x" << hex << setw(8) << setfill('0') << id);
+                chip = boost::make_optional(Chip(id));
+                chip->metadata = metadata;
+            }
+                break;
+            case BitstreamCommand::LSC_PROG_CNTRL0: {
+                rd.skip_bytes(3);
+                uint32_t cfg = rd.get_uint32();
+                chip->ctrl0 = cfg;
+                BITSTREAM_DEBUG("set control reg 0 to 0x" << hex << setw(8) << setfill('0') << cfg);
+            }
+                break;
+            case BitstreamCommand::ISC_PROGRAM_DONE:
+                rd.skip_bytes(3);
+                BITSTREAM_NOTE("program DONE");
+                break;
+            case BitstreamCommand::ISC_PROGRAM_SECURITY:
+                rd.skip_bytes(3);
+                BITSTREAM_NOTE("program SECURITY");
+                break;
+            case BitstreamCommand::ISC_PROGRAM_USERCODE: {
+                bool check_crc = (rd.get_byte() & 0x80) != 0;
+                rd.skip_bytes(2);
+                uint32_t uc = rd.get_uint32();
+                BITSTREAM_NOTE("set USERCODE to 0x" << hex << setw(8) << setfill('0') << uc);
+                chip->usercode = uc;
+                if (check_crc)
+                    rd.check_crc16();
+            }
+                break;
+            case BitstreamCommand::LSC_WRITE_COMP_DIC: {
+                bool check_crc = (rd.get_byte() & 0x80) != 0;
+                rd.skip_bytes(2);
+                compression_dict = boost::make_optional(array<uint8_t, 8>());
+                // patterns are stored in the bitstream in reverse order: pattern7 to pattern0
+                for (int i = 7; i >= 0; i--) {
+                  uint8_t pattern = rd.get_byte();
+                  compression_dict.get()[i] = pattern;
+                }
+                BITSTREAM_DEBUG("write compression dictionary: " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[0]) << " " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[1]) << " " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[2]) << " " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[3]) << " " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[4]) << " " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[5]) << " " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[6]) << " " <<
+                                "0x" << hex << setw(2) << setfill('0') << int(compression_dict.get()[7]));;
+                if (check_crc)
+                  rd.check_crc16();
+            }
+                break;
+            case BitstreamCommand::LSC_INIT_ADDRESS:
+                rd.skip_bytes(3);
+                BITSTREAM_DEBUG("init address");
+                break;
+            case BitstreamCommand::LSC_PROG_INCR_CMP:
+                // This is the main bitstream payload (compressed)
+                BITSTREAM_DEBUG("Compressed bitstream found");
+                if (!compression_dict)
+                    throw BitstreamParseError("start of compressed bitstream data before compression dictionary was stored", rd.get_offset());
+                // fall through
+            case BitstreamCommand::LSC_PROG_INCR_RTI: {
+                // This is the main bitstream payload
+                if (!chip)
+                    throw BitstreamParseError("start of bitstream data before chip was identified", rd.get_offset());
+
+                BitstreamOptions ops(chip.get()); // Only reversed_frames is meaningful here.
+
+                uint8_t params[3];
+                rd.get_bytes(params, 3);
+                BITSTREAM_DEBUG("settings: " << hex << setw(2) << int(params[0]) << " " << int(params[1]) << " "
+                                             << int(params[2]));
+                // I've only seen 0x81 for the ecp5 and 0x8e for the xo2 so far...
+                bool check_crc = params[0] & 0x80U;
+                // inverted value: a 0 means check after every frame
+                bool crc_after_each_frame = check_crc && !(params[0] & 0x40U);
+                // I don't know what these two are for I've seen both 1s (XO2) and both 0s (ECP5)
+                // The names are from the ECP5 docs
+                // bool include_dummy_bits = params[0] & 0x20U;
+                // bool include_dummy_bytes = params[0] & 0x10U;
+                size_t dummy_bytes = params[0] & 0x0FU;
+                size_t frame_count = (params[1] << 8U) | params[2];
+                BITSTREAM_NOTE("reading " << std::dec << frame_count << " config frames (with " << std::dec << dummy_bytes << " dummy bytes)");
+                size_t bytes_per_frame = (chip->info.bits_per_frame + chip->info.pad_bits_after_frame +
+                                          chip->info.pad_bits_before_frame) / 8U;
+                // If compressed 0 bits are added to the stream before compression to make it 64 bit bounded, so
+                // we should consider that space here but they shouldn't be copied to the output
+                if (cmd == BitstreamCommand::LSC_PROG_INCR_CMP)
+                    bytes_per_frame += (7 - ((bytes_per_frame - 1) % 8));
+                unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bytes_per_frame);
+                for (size_t i = 0; i < frame_count; i++) {
+                    size_t idx = ops.reversed_frames ? (chip->info.num_frames - 1) - i : i;
+                    if (cmd == BitstreamCommand::LSC_PROG_INCR_CMP)
+                        rd.get_compressed_bytes(frame_bytes.get(), bytes_per_frame, compression_dict.get());
+                    else
+                        rd.get_bytes(frame_bytes.get(), bytes_per_frame);
+
+                    for (int j = 0; j < chip->info.bits_per_frame; j++) {
+                        size_t ofs = j + chip->info.pad_bits_after_frame;
+                        chip->cram.bit(idx, j) = (char)
+                            ((frame_bytes[(bytes_per_frame - 1) - (ofs / 8)] >> (ofs % 8)) & 0x01);
+                    }
+                    if (crc_after_each_frame || (check_crc && (i == frame_count-1)))
+                      rd.check_crc16();
+                    rd.skip_bytes(dummy_bytes);
+                }
+            }
+                break;
+            case BitstreamCommand::LSC_EBR_ADDRESS: {
+                rd.skip_bytes(3);
+                uint32_t data = rd.get_uint32();
+                current_ebr = (data >> 11) & 0x3FF;
+                addr_in_ebr = data & 0x7FF;
+                chip->bram_data[current_ebr].resize(2048);
+            }
+                break;
+            case BitstreamCommand::LSC_EBR_WRITE: {
+                uint8_t params[3];
+                rd.get_bytes(params, 3);
+                int frame_count = (params[1] << 8U) | params[2];
+                int frames_read = 0;
+
+                while (frames_read < frame_count) {
+
+                    if (addr_in_ebr >= 2048) {
+                        addr_in_ebr = 0;
+                        current_ebr++;
+                        chip->bram_data[current_ebr].resize(2048);
+                    }
+
+                    auto &ebr = chip->bram_data[current_ebr];
+                    frames_read++;
+                    uint8_t frame[9];
+                    rd.get_bytes(frame, 9);
+                    ebr.at(addr_in_ebr+0) = (frame[0] << 1)        | (frame[1] >> 7);
+                    ebr.at(addr_in_ebr+1) = (frame[1] & 0x7F) << 2 | (frame[2] >> 6);
+                    ebr.at(addr_in_ebr+2) = (frame[2] & 0x3F) << 3 | (frame[3] >> 5);
+                    ebr.at(addr_in_ebr+3) = (frame[3] & 0x1F) << 4 | (frame[4] >> 4);
+                    ebr.at(addr_in_ebr+4) = (frame[4] & 0x0F) << 5 | (frame[5] >> 3);
+                    ebr.at(addr_in_ebr+5) = (frame[5] & 0x07) << 6 | (frame[6] >> 2);
+                    ebr.at(addr_in_ebr+6) = (frame[6] & 0x03) << 7 | (frame[7] >> 1);
+                    ebr.at(addr_in_ebr+7) = (frame[7] & 0x01) << 8 | frame[8];
+                    addr_in_ebr += 8;
+
+                }
+                rd.check_crc16();
+            }
+                break;
+            case BitstreamCommand::SPI_MODE: {
+                uint8_t spi_mode;
+                rd.get_bytes(&spi_mode, 1);
+                rd.skip_bytes(2);
+
+                auto spimode = find_if(spi_modes.begin(), spi_modes.end(), [&](const pair<string, uint8_t> &fp){
+                    return fp.second == spi_mode;
+                });
+                if (spimode == spi_modes.end())
+                    throw runtime_error("bad SPI mode" + std::to_string(spi_mode));
+
+                BITSTREAM_NOTE("SPI Mode " <<  spimode->first);
+            }
+                break;
+            case BitstreamCommand::JUMP:
+                rd.skip_bytes(3);
+                BITSTREAM_DEBUG("Jump command");
+                // TODO: Parse address and SPI Flash read speed 
+                rd.skip_bytes(4);
+                break;
+            case BitstreamCommand::DUMMY:
+                break;
+            default: BITSTREAM_FATAL("unsupported command 0x" << hex << setw(2) << setfill('0') << int(cmd),
+                                     rd.get_offset());
+        }
+    }
+    */
+    if (chip) {
+        return *chip;
+    } else {
+        throw BitstreamParseError("failed to parse bitstream, no valid payload found");
+    }
 }
 
 BitstreamParseError::BitstreamParseError(const std::string &desc) : runtime_error(desc.c_str()), desc(desc), offset(-1)

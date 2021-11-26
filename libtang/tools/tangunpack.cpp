@@ -76,4 +76,21 @@ help:
     }
 
     //ChipInfo info = get_chip_info(find_device_by_name("eagle_s20"));
+    try {
+        Chip c = Bitstream::read(bit_file).deserialise_chip();
+        /*ChipConfig cc = ChipConfig::from_chip(c);
+        ofstream out_file(vm["textcfg"].as<string>());
+        if (!out_file) {
+            cerr << "Failed to open output file" << endl;
+            return 1;
+        }
+        out_file << cc.to_string();*/
+        return 0;
+    } catch (BitstreamParseError &e) {
+        cerr << "Failed to process input bitstream: " << e.what() << endl;
+        return 1;
+    } catch (runtime_error &e) {
+        cerr << "Failed to process input bitstream: " << e.what() << endl;
+        return 1;
+    }
 }

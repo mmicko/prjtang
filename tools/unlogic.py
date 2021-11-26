@@ -480,8 +480,6 @@ def decode_chipdb(argv):
 				current_item = {
 					"inst": unk[0],
 					"type": unk[1],
-					"x" : int(unk[2]),
-					"y" : int(unk[3]),
 					"w": int(unk[4]),
 					"h": int(unk[5]),
 					"wl_beg": int(unk[6]),
@@ -499,7 +497,6 @@ def decode_chipdb(argv):
 			current_tile = {
 				"x": x,
 				"y": y,
-				"loc": "x{}y{}".format(x,y),
 				"val": tile_val
 			}
 			tiles[y][x] = current_tile
