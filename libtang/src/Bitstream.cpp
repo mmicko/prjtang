@@ -27,6 +27,7 @@ enum class BitstreamCommand : uint8_t {
     CMD_C5 = 0xc5,
     CMD_CA = 0xca,
     FUSE_DATA = 0xec,
+    MEMORY_DATA = 0xed,
     //CPLD only
     DEVICEID_CPLD = 0x90,
     RESET_CRC_CPLD = 0xa8,
@@ -300,7 +301,7 @@ Chip Bitstream::deserialise_chip()
         uint16_t block_size = rd.get_block_size();
         
         BitstreamCommand cmd = rd.get_command_opcode();
-        if (cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO) {
+        if (cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO && cmd!=BitstreamCommand::MEMORY_DATA) {
             uint8_t flag = rd.get_byte();
             //printf("%02x %02x %04x\n",(uint8_t) cmd, flag, block_size);
             if (!flag) {
@@ -377,38 +378,47 @@ Chip Bitstream::deserialise_chip()
                 BITSTREAM_DEBUG("CMD_CA");
                 rd.get_uint32();
                 break;
-            case BitstreamCommand::FUSE_DATA:
-                {
-                    uint16_t frames = rd.get_uint16();
-                    uint16_t bytes_per_frame = chip->info.bits_per_frame / 8L;
-                    unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bytes_per_frame);
-                    for (int idx = 0; idx < frames; idx++) {
-                        block_size = rd.get_block_size();
-                        rd.get_bytes(frame_bytes.get(), bytes_per_frame);
-                        rd.get_uint16(); // crc
-                        if (rd.get_uint32()) 
-                            throw BitstreamParseError("error parsing fuse data");
-                        for (uint32_t j = 0; j < chip->info.bits_per_frame; j++) {
-                            //chip->cram.bit(idx, j) = (char) ((frame_bytes[(bytes_per_frame - 1) - (j / 8)] >> (j % 8)) & 0x01);
-                            chip->cram.bit(idx, j) = (char) ((frame_bytes[(j / 8)]<< (j % 8)) & 0x80);
-                        }    
-                    }
-                    // zero block
+            case BitstreamCommand::FUSE_DATA: {
+                uint16_t frames = rd.get_uint16();
+                uint16_t bytes_per_frame = chip->info.bits_per_frame / 8L;
+                unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bytes_per_frame);
+                for (int idx = 0; idx < frames; idx++) {
                     block_size = rd.get_block_size();
-                    rd.skip_bytes(block_size);
+                    rd.get_bytes(frame_bytes.get(), bytes_per_frame);
+                    rd.get_uint16(); // crc
+                    if (rd.get_uint32()) 
+                        throw BitstreamParseError("error parsing fuse data");
+                    for (uint32_t j = 0; j < chip->info.bits_per_frame; j++) {
+                        //chip->cram.bit(idx, j) = (char) ((frame_bytes[(bytes_per_frame - 1) - (j / 8)] >> (j % 8)) & 0x01);
+                        chip->cram.bit(idx, j) = (char) ((frame_bytes[(j / 8)]<< (j % 8)) & 0x80);
+                    }    
                 }
+                // zero block
+                block_size = rd.get_block_size();
+                rd.skip_bytes(block_size);
                 break;
-
+            }
+            case BitstreamCommand::MEMORY_DATA: {
+                rd.get_uint16();
+                uint8_t mem_block_id = rd.get_byte();
+                BITSTREAM_NOTE("mem_block_id 0x" << hex << setw(2) << setfill('0') << (int)mem_block_id);
+                uint16_t mem_bytes_per_frame = 1152;
+                rd.skip_bytes(mem_bytes_per_frame);
+                rd.get_uint16(); // crc16
+                rd.skip_bytes(4); // padding
+                break;
+            }
             case BitstreamCommand::DUMMY:
             case BitstreamCommand::ZERO:
                 // first byte is read as cmd
+                BITSTREAM_NOTE("padding block_size " << dec << block_size);
                 rd.skip_bytes(block_size-1);
                 break;
             default:
                 BITSTREAM_FATAL("unsupported command 0x" << hex << setw(2) << setfill('0') << int(cmd), rd.get_offset());
         }
 
-        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO)
+        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO && cmd!=BitstreamCommand::MEMORY_DATA)
             rd.get_uint16(); //block crc16    
     }
 
@@ -428,6 +438,7 @@ void Bitstream::write_fuse(const Chip &chip, std::ostream &file)
         file << std::endl;
     }
 }
+
 BitstreamParseError::BitstreamParseError(const std::string &desc) : runtime_error(desc.c_str()), desc(desc), offset(-1)
 {
 }
