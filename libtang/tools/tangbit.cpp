@@ -6,6 +6,9 @@
 #include "version.hpp"
 #include "wasmexcept.hpp"
 #include "Bitstream.hpp"
+#include "Chip.hpp"
+#include "Database.hpp"
+#include "DatabasePath.hpp"
 
 using namespace std;
 using namespace Tang;
@@ -13,6 +16,8 @@ using namespace Tang;
 int main(int argc, char *argv[])
 {
     namespace po = boost::program_options;
+    
+    std::string database_folder = get_database_path();
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "show help");
@@ -24,7 +29,7 @@ int main(int argc, char *argv[])
     options.add_options()("svf", po::value<std::string>(), "output svf file");
     options.add_options()("verbose", "show parsing info");
     options.add_options()("verbose_data", "show additional parsing data");
-    options.add_options()("bits", "extract bits locations");
+    options.add_options()("db", po::value<std::string>(), "Tang database folder location");
 
     po::positional_options_description pos;
     options.add_options()("input", po::value<std::string>()->required(), "input bitstream file");
@@ -52,23 +57,35 @@ int main(int argc, char *argv[])
         return vm.count("help") ? 0 : 1;
     }
 
-    bool verbose = vm.count("verbose");
+    //bool verbose = vm.count("verbose");
 
     ifstream bitstream_file(vm["input"].as<string>());
     if (!bitstream_file) {
         cerr << "Failed to open input file" << endl;
         return 1;
     }
+
+    if (vm.count("db")) {
+        database_folder = vm["db"].as<string>();
+    }
+
     try {
-        Bitstream bitstream = Bitstream::read(bitstream_file);
-        bitstream.parse(verbose, vm.count("verbose_data"));
-        if (verbose)
-            printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
+        load_database(database_folder);
+    } catch (runtime_error &e) {
+        cerr << "Failed to load Tang database: " << e.what() << endl;
+        return 1;
+    }
+
+    try {
+        Chip c = Bitstream::read(bitstream_file).deserialise_chip();
+        //bitstream.parse(verbose, vm.count("verbose_data"));
+        //if (verbose)
+            //printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
         if (vm.count("fuse")) {
             ofstream fuse_file(vm["fuse"].as<string>(), ios::out | ios::trunc);
-            bitstream.write_fuse(fuse_file);
+            Bitstream::write_fuse(c, fuse_file);
         }
-        if (vm.count("bas")) {
+/*        if (vm.count("bas")) {
             ofstream bas_file(vm["bas"].as<string>(), ios::out | ios::trunc);
             bitstream.write_bas(bas_file);
         }
@@ -87,7 +104,7 @@ int main(int argc, char *argv[])
         if (vm.count("svf")) {
             ofstream svf_file(vm["svf"].as<string>(), ios::out | ios::trunc);
             bitstream.write_svf(svf_file);
-        }
+        }*/
     } catch (BitstreamParseError &e) {
         cerr << e.what() << endl;
     }

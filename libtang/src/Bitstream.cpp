@@ -313,12 +313,11 @@ Chip Bitstream::deserialise_chip()
 
         switch (cmd) {
             case BitstreamCommand::RESET_CRC:
-                BITSTREAM_DEBUG("RESET_CRC");
+                BITSTREAM_DEBUG("reset crc");
                 rd.get_uint16();
                 rd.reset_crc16();
                 break;
             case BitstreamCommand::DEVICEID: {
-                BITSTREAM_DEBUG("DEVICEID");
                 uint32_t id = rd.get_uint32();
                 BITSTREAM_NOTE("device ID: 0x" << hex << setw(8) << setfill('0') << id);
                 chip = boost::make_optional(Chip(id));
@@ -326,8 +325,8 @@ Chip Bitstream::deserialise_chip()
                 break;
             }
             case BitstreamCommand::VERSION_UCODE:
-                BITSTREAM_DEBUG("VERSION_UCODE");
                 chip->usercode = rd.get_uint32();
+                BITSTREAM_NOTE("version and usercode 0x"<< hex << setw(8) << setfill('0') << chip->usercode);
                 break;
             case BitstreamCommand::CFG_1:
                 BITSTREAM_DEBUG("CFG_1");
@@ -337,16 +336,25 @@ Chip Bitstream::deserialise_chip()
                 BITSTREAM_DEBUG("CFG_2");
                 chip->cfg2 = rd.get_uint32();
                 break;
-            case BitstreamCommand::FRAMES:
-                BITSTREAM_DEBUG("FRAMES");
-                rd.get_uint32();
+            case BitstreamCommand::FRAMES: {
+                uint16_t frames = rd.get_uint16();
+                uint32_t bits_per_frame = rd.get_uint16() << 3;
+                BITSTREAM_NOTE("frames " << dec << frames << " bits_per_frame " << dec << bits_per_frame);
+                BITSTREAM_NOTE("num_frames " << dec << chip->info.num_frames << " bits_per_frame " << dec << chip->info.bits_per_frame);
+                if (frames!=chip->info.num_frames)
+                    throw BitstreamParseError("different number of frames than expected");
+                if (bits_per_frame!=chip->info.bits_per_frame)
+                    throw BitstreamParseError("different bits per frame than expected");
                 break;
-            case BitstreamCommand::MEM_FRAME:
-                BITSTREAM_DEBUG("MEM_FRAME");
-                rd.get_uint32();
+            }
+            case BitstreamCommand::MEM_FRAME: {
+                rd.get_uint16();
+                uint32_t memory_bits_per_frame = rd.get_uint16() << 3;
+                BITSTREAM_NOTE("memory_bits_per_frame " << dec << memory_bits_per_frame);
                 break;
+            }
             case BitstreamCommand::PROGRAM_DONE:
-                BITSTREAM_DEBUG("PROGRAM_DONE");
+                BITSTREAM_NOTE("program done");
                 rd.get_uint16();
                 break;
             case BitstreamCommand::CMD_F3:
@@ -371,12 +379,19 @@ Chip Bitstream::deserialise_chip()
                 break;
             case BitstreamCommand::FUSE_DATA:
                 {
-                    BITSTREAM_DEBUG("FUSE_DATA");
                     uint16_t frames = rd.get_uint16();
-
-                    for (int i=0;i<frames;i++) {
+                    uint16_t bytes_per_frame = chip->info.bits_per_frame / 8L;
+                    unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bytes_per_frame);
+                    for (int idx = 0; idx < frames; idx++) {
                         block_size = rd.get_block_size();
-                        rd.skip_bytes(block_size);
+                        rd.get_bytes(frame_bytes.get(), bytes_per_frame);
+                        rd.get_uint16(); // crc
+                        if (rd.get_uint32()) 
+                            throw BitstreamParseError("error parsing fuse data");
+                        for (uint32_t j = 0; j < chip->info.bits_per_frame; j++) {
+                            //chip->cram.bit(idx, j) = (char) ((frame_bytes[(bytes_per_frame - 1) - (j / 8)] >> (j % 8)) & 0x01);
+                            chip->cram.bit(idx, j) = (char) ((frame_bytes[(j / 8)]<< (j % 8)) & 0x80);
+                        }    
                     }
                     // zero block
                     block_size = rd.get_block_size();
@@ -404,6 +419,15 @@ Chip Bitstream::deserialise_chip()
     }
 }
 
+void Bitstream::write_fuse(const Chip &chip, std::ostream &file)
+{
+    for (int idx = 0; idx < chip.cram.frames(); idx++) {
+        for (int pos = 0; pos < chip.cram.bits(); pos++) {
+            file << chip.cram.get_bit(idx, pos);
+        }
+        file << std::endl;
+    }
+}
 BitstreamParseError::BitstreamParseError(const std::string &desc) : runtime_error(desc.c_str()), desc(desc), offset(-1)
 {
 }

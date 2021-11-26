@@ -10,7 +10,7 @@
                     "max_col": 41,
                     "max_row": 72,
                     "frames": 1259,
-                    "bits_per_frame": 3892,
+                    "bits_per_frame": 3904,
                     "gap": 0
                 },
                 "eagle_20": {
@@ -22,7 +22,7 @@
                     "max_col": 41,
                     "max_row": 72,
                     "frames": 1259,
-                    "bits_per_frame": 3892,
+                    "bits_per_frame": 3904,
                     "gap": 0
                 },
                 "eagle_s20": {
@@ -35,7 +35,7 @@
                     "max_col": 41,
                     "max_row": 72,
                     "frames": 1259,
-                    "bits_per_frame": 3892,
+                    "bits_per_frame": 3904,
                     "gap": 0
                 }
             }

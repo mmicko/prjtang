@@ -78,7 +78,6 @@ ChipInfo get_chip_info(const DeviceLocator &part) {
     ci.name = part.device;
     ci.num_frames = dev.get<int>("frames");
     ci.bits_per_frame = dev.get<int>("bits_per_frame");
-    //ci.idcode = parse_uint32(dev.get<string>("idcode"));
     ci.max_row = dev.get<int>("max_row");
     ci.max_col = dev.get<int>("max_col");
     return ci;

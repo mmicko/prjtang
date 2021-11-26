@@ -17,9 +17,8 @@ struct ChipInfo
 {
     string name;
     string family;
-    //uint32_t idcode;
-    int num_frames;
-    int bits_per_frame;
+    uint16_t num_frames;
+    uint32_t bits_per_frame;
     int max_row;
     int max_col;
 };
@@ -44,7 +43,7 @@ public:
     CRAM cram;
 
     // Miscellaneous information
-    uint32_t usercode = 0x0;
+    uint32_t usercode = 0x00000000;
     uint32_t cfg1;
     uint32_t cfg2;
     vector<string> metadata;

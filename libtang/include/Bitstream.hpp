@@ -23,9 +23,9 @@ class Bitstream
                        const uint16_t crc16);
     void parse_command_cpld(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
                             const uint16_t crc16);
-/*    uint16_t calculate_bitstream_crc();
-    void write_fuse(std::ostream &file);
-    void write_bin(std::ostream &file);
+    //uint16_t calculate_bitstream_crc();
+    static void write_fuse(const Chip &chip, std::ostream &file);
+    /*void write_bin(std::ostream &file);
     void write_bas(std::ostream &file);
     void write_bmk(std::ostream &file);
     void write_bma(std::ostream &file);
