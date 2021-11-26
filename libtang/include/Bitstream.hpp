@@ -10,20 +10,6 @@
 
 namespace Tang {
 
-class Crc16
-{
-    static const uint16_t CRC16_POLY = 0x8005;
-    static const uint16_t CRC16_INIT = 0x0000;
-    uint16_t crc16 = CRC16_INIT;
-
-  public:
-    void update_crc16(uint8_t val);
-    uint16_t finalise_crc16();
-    void reset_crc16(uint16_t init = 0x0000);
-    uint16_t calc(const std::vector<uint8_t> &data, int start, int end);
-    uint16_t update_block(const std::vector<uint8_t> &data, int start, int end);
-};
-
 class Chip;
 
 class Bitstream
@@ -37,46 +23,25 @@ class Bitstream
                        const uint16_t crc16);
     void parse_command_cpld(const uint8_t command, const uint16_t size, const std::vector<uint8_t> &data,
                             const uint16_t crc16);
-    uint16_t calculate_bitstream_crc();
+/*    uint16_t calculate_bitstream_crc();
     void write_fuse(std::ostream &file);
     void write_bin(std::ostream &file);
     void write_bas(std::ostream &file);
     void write_bmk(std::ostream &file);
     void write_bma(std::ostream &file);
     void write_svf(std::ostream &file);
-
+*/
     // Deserialise a bitstream to a Chip
     Chip deserialise_chip();
   private:
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
 
     std::string vector_to_string(const std::vector<uint8_t> &data);
-
-    uint16_t data_blocks;
     // Raw bitstream data
     std::vector<uint8_t> data;
     // BIT file metadata
     std::vector<std::string> metadata;
-    // Block data
-    std::vector<std::vector<uint8_t>> blocks;
-    // status if bitstream is from CPLD
-    bool cpld;
-    // Number of frames in bitstream
-    uint16_t frames;
-    // Number of bytes in frame
-    uint16_t frame_bytes;
-    // Number of bytes in memory frame
-    uint16_t mem_frame_bytes;
-    // Crc for current data block (frame)
-    Crc16 crc;
-    // Flag that actual fuse data have started
-    bool fuse_started;
-    // Number of block where fuse data starts
-    size_t fuse_start_block;
-    // Verbose flag
-    bool verbose;
-    // Current device id
-    uint32_t deviceid;
+
 };
 
 class BitstreamParseError : std::runtime_error
