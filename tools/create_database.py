@@ -26,7 +26,6 @@ def main():
 		for device in devices["families"][family]["devices"].keys():
 			print("Device: " + device)
 			selected_device = devices["families"][family]["devices"][device]
-			package = selected_device["packages"][0]
 			os.mkdir(path.join("work_decrypt",device))
 
 			json_file = path.join(database.get_db_subdir(family, device), "tilegrid.json")

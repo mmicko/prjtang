@@ -22,7 +22,6 @@ def main():
 		for device in devices["families"][family]["devices"].keys():
 			print("Device: " + device)
 			selected_device = devices["families"][family]["devices"][device]
-			package = selected_device["packages"][0]
 			os.mkdir(path.join("work_decrypt",device))
 			unc_file = path.join("work_decrypt", device + ".unc")
 			chipdb = path.join(tang_root, "arch", device + ".db") 
