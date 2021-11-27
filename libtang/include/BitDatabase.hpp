@@ -15,12 +15,6 @@
 #include <unordered_set>
 #include "Util.hpp"
 
-#ifdef FUZZ_SAFETY_CHECK
-
-#include <boost/interprocess/sync/file_lock.hpp>
-
-#endif
-
 using namespace std;
 namespace Tang {
 /*
@@ -346,10 +340,6 @@ private:
     string filename;
 
     void load();
-
-#ifdef FUZZ_SAFETY_CHECK
-    boost::interprocess::file_lock ip_db_lock;
-#endif
 };
 
 // Represents a conflict while adding something to the database
