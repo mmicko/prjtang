@@ -309,8 +309,18 @@ Chip Bitstream::deserialise_chip()
         uint16_t block_size = rd.get_block_size();
         rd.crc16.reset_crc16();
         BitstreamCommand cmd = rd.get_command_opcode();
+
         bool is_cpld_command = false;
         switch(cmd) {
+            case BitstreamCommand::DUMMY_FF:
+            case BitstreamCommand::DUMMY_EE:
+            case BitstreamCommand::DUMMY_00:
+                // first byte is read as cmd
+                BITSTREAM_NOTE("padding block_size " << dec << block_size);
+                rd.skip_bytes(block_size-1);
+                continue;
+                break;
+
             case BitstreamCommand::DEVICEID_CPLD:
             case BitstreamCommand::RESET_CRC_CPLD:
             case BitstreamCommand::CMD_A1:
@@ -328,7 +338,7 @@ Chip Bitstream::deserialise_chip()
                 is_cpld_command = false;
         }
         uint16_t cmd_size = 0;
-        if (cmd!=BitstreamCommand::DUMMY_FF && cmd!=BitstreamCommand::DUMMY_EE && cmd!=BitstreamCommand::DUMMY_00 && cmd!=BitstreamCommand::MEMORY_DATA) {
+        if (cmd!=BitstreamCommand::MEMORY_DATA) {
             uint8_t flag = rd.get_byte();
             if (!flag) {
                 cmd_size = rd.get_uint16();
@@ -473,14 +483,6 @@ Chip Bitstream::deserialise_chip()
                 rd.skip_bytes(4); // padding
                 break;
             }
-            case BitstreamCommand::DUMMY_FF:
-            case BitstreamCommand::DUMMY_EE:
-            case BitstreamCommand::DUMMY_00:
-                // first byte is read as cmd
-                BITSTREAM_NOTE("padding block_size " << dec << block_size);
-                rd.skip_bytes(block_size-1);
-                break;
-
             // CPLD specific
             case BitstreamCommand::RESET_CRC_CPLD:
                 BITSTREAM_DEBUG("reset crc");
@@ -536,7 +538,7 @@ Chip Bitstream::deserialise_chip()
                 BITSTREAM_FATAL("unsupported command 0x" << hex << setw(2) << setfill('0') << int(cmd), rd.get_offset());
         }
 
-        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::CPLD_DATA && cmd!=BitstreamCommand::DUMMY_FF && cmd!=BitstreamCommand::DUMMY_EE && cmd!=BitstreamCommand::DUMMY_00 && cmd!=BitstreamCommand::MEMORY_DATA) {
+        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::CPLD_DATA && cmd!=BitstreamCommand::MEMORY_DATA) {
             rd.check_crc16();
         }
     }
