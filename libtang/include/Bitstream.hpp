@@ -2,11 +2,15 @@
 #define LIBTANG_BITSTREAM_HPP
 
 #include <cstdint>
-#include <iomanip>
-#include <sstream>
-#include <stdexcept>
-#include <string>
+#include <memory>
+#include <iostream>
+
+
 #include <vector>
+#include <string>
+#include <stdexcept>
+#include <map>
+#include <boost/optional.hpp>
 
 namespace Tang {
 
@@ -17,13 +21,19 @@ class Bitstream
   public:
     static Bitstream read(std::istream &in);
 
-    static void write_fuse(const Chip &chip, std::ostream &file);
-    /*void write_bin(std::ostream &file);
-    void write_bas(std::ostream &file);
-    void write_bmk(std::ostream &file);
-    void write_bma(std::ostream &file);
-    void write_svf(std::ostream &file);
+    // Serialize Chip to bitstream 
+    static void write_fuse(const Chip &chip, std::ostream &out);
+    
+    void write_bit(std::ostream &out);
+    /*void write_bin(const Chip &chip, std::ostream &out);
+    void write_bas(const Chip &chip, std::ostream &out);
+    void write_bmk(const Chip &chip, std::ostream &out);
+    void write_bma(const Chip &chip, std::ostream &out);
+    void write_svf(const Chip &chip, std::ostream &out);
 */
+    // Serialise a Chip back to a bitstream
+    static Bitstream serialise_chip(const Chip &chip, const std::map<std::string, std::string> options);
+
     // Deserialise a bitstream to a Chip
     Chip deserialise_chip();
   private:
@@ -34,7 +44,6 @@ class Bitstream
     std::vector<uint8_t> data;
     // BIT file metadata
     std::vector<std::string> metadata;
-
 };
 
 class BitstreamParseError : std::runtime_error

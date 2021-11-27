@@ -2,12 +2,14 @@
 #include "Chip.hpp"
 #include "Tile.hpp"
 #include "Util.hpp"
+#include "BitDatabase.hpp"
 #include <iostream>
 #include <boost/optional.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <stdexcept>
 #include <mutex>
+
 
 
 namespace pt = boost::property_tree;
@@ -108,25 +110,20 @@ vector<TileInfo> get_device_tilegrid(const DeviceLocator &part) {
             ti.max_row = info.max_row;
 
             ti.name = tile.first;
-            ti.num_frames = size_t(tile.second.get<int>("cols"));
-            ti.bits_per_frame = size_t(tile.second.get<int>("rows"));
-            ti.bit_offset = size_t(tile.second.get<int>("start_bit"));
-            ti.frame_offset = size_t(tile.second.get<int>("start_frame"));
+            ti.col = size_t(tile.second.get<int>("x"));
+            ti.row = size_t(tile.second.get<int>("y"));
+            ti.num_frames = size_t(tile.second.get<int>("w"));
+            ti.bits_per_frame = size_t(tile.second.get<int>("h"));
+            ti.bit_offset = size_t(tile.second.get<int>("wl_beg"));
+            ti.frame_offset = size_t(tile.second.get<int>("bl_beg"));
             ti.type = tile.second.get<string>("type");
-            for (const pt::ptree::value_type &site : tile.second.get_child("sites")) {
-                SiteInfo si;
-                si.type = site.second.get<string>("name");
-                si.col = site.second.get<int>("pos_col");
-                si.row = site.second.get<int>("pos_row");
-                ti.sites.push_back(si);
-            }
             tilesInfo.push_back(ti);
         }
     }
     return tilesInfo;
 }
 
-/*
+
 static unordered_map<TileLocator, shared_ptr<TileBitDatabase>> bitdb_store;
 #ifndef NO_THREADS
 static mutex bitdb_store_mutex;
@@ -146,6 +143,6 @@ shared_ptr<TileBitDatabase> get_tile_bitdata(const TileLocator &tile) {
         return bitdb_store.at(tile);
     }
 }
-*/
+
 
 }

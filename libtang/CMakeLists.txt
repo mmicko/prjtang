@@ -114,19 +114,25 @@ target_compile_definitions(${PROGRAM_PREFIX}tangunpack PRIVATE TANG_RPATH_DATADI
 target_link_libraries(${PROGRAM_PREFIX}tangunpack tang ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${link_param})
 setup_rpath(${PROGRAM_PREFIX}tangunpack)
 
+add_executable(${PROGRAM_PREFIX}tangpack ${INCLUDE_FILES} tools/tangpack.cpp "${CMAKE_BINARY_DIR}/generated/version.cpp")
+target_include_directories(${PROGRAM_PREFIX}tangpack PRIVATE tools)
+target_compile_definitions(${PROGRAM_PREFIX}tangpack PRIVATE TANG_RPATH_DATADIR="${TANG_RPATH_DATADIR}" TANG_PREFIX="${CMAKE_INSTALL_PREFIX}" TANG_PROGRAM_PREFIX="${PROGRAM_PREFIX}")
+target_link_libraries(${PROGRAM_PREFIX}tangpack tang ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${link_param})
+setup_rpath(${PROGRAM_PREFIX}tangpack)
+
 if (WASI)
-    foreach (tool tangbit tangunpack)
+    foreach (tool tangbit tangunpack tangpack)
         # set(CMAKE_EXECUTABLE_SUFFIX) breaks CMake tests for some reason
         set_property(TARGET ${PROGRAM_PREFIX}${tool} PROPERTY SUFFIX ".wasm")
     endforeach()
 endif()
 
 if (BUILD_SHARED)
-    install(TARGETS tang ${PROGRAM_PREFIX}tangbit ${PROGRAM_PREFIX}tangunpack
+    install(TARGETS tang ${PROGRAM_PREFIX}tangbit ${PROGRAM_PREFIX}tangunpack ${PROGRAM_PREFIX}tangpack
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROGRAM_PREFIX}tang
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 else()
-    install(TARGETS ${PROGRAM_PREFIX}tangbit ${PROGRAM_PREFIX}tangunpack
+    install(TARGETS ${PROGRAM_PREFIX}tangbit ${PROGRAM_PREFIX}tangunpack ${PROGRAM_PREFIX}tangpack
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 install(DIRECTORY ../database DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROGRAM_PREFIX}tang PATTERN ".git" EXCLUDE)

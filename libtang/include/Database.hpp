@@ -48,6 +48,12 @@ struct TileInfo;
 
 vector<TileInfo> get_device_tilegrid(const DeviceLocator &part);
 
+
+// Obtain the BitDatabase for a device/tile combination
+// BitDatabases are a singleton
+class TileBitDatabase;
+shared_ptr<TileBitDatabase> get_tile_bitdata(const TileLocator &tile);      
+
 }
 
 // Hash function for TileLocator

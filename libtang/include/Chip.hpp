@@ -24,6 +24,11 @@ struct ChipInfo
     int max_col;
 };
 
+class Tile;
+
+// A difference between two Chips
+// A list of pairs mapping between tile identifier (name:type) and tile difference
+typedef map<string, CRAMDelta> ChipDelta;
 
 class Chip
 {
@@ -43,12 +48,31 @@ public:
     // The chip's configuration memory
     CRAM cram;
 
+
+    // Tile access
+    shared_ptr<Tile> get_tile_by_name(string name);
+
+    vector<shared_ptr<Tile>> get_tiles_by_position(int row, int col);
+
+    vector<shared_ptr<Tile>> get_tiles_by_type(string type);
+
+    vector<shared_ptr<Tile>> get_all_tiles();
+
+    string get_tile_by_position_and_type(int row, int col, string type);
+
+    string get_tile_by_position_and_type(int row, int col, set<string> type);
+
+    // Map tile name to a tile reference
+    map<string, shared_ptr<Tile>> tiles;         
+
     // Miscellaneous information
     uint32_t usercode = 0x00000000;
     uint32_t cfg1;
     uint32_t cfg2;
     vector<string> metadata;
 
+
+    vector<vector<vector<pair<string, string>>>> tiles_at_location;
     // Block RAM initialisation
     map<uint8_t, vector<uint8_t>> bram_data;
 

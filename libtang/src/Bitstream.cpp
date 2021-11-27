@@ -550,13 +550,34 @@ Chip Bitstream::deserialise_chip()
     }
 }
 
-void Bitstream::write_fuse(const Chip &chip, std::ostream &file)
+void Bitstream::write_bit(std::ostream &out)
+{
+    for (const auto &str : metadata) {
+        out << str;
+        out.put(0x0a);
+    }
+    // Dump raw bitstream
+    out.write(reinterpret_cast<const char *>(&(data[0])), data.size());
+}
+
+Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string> options) {
+    BitstreamReadWriter wr;
+
+    //BitstreamOptions ops(chip);
+
+    // Preamble
+    wr.write_bytes(preamble.begin(), preamble.size());
+
+    return Bitstream(wr.get(), chip.metadata);
+}
+
+void Bitstream::write_fuse(const Chip &chip, std::ostream &out)
 {
     for (int idx = 0; idx < chip.cram.frames(); idx++) {
         for (int pos = 0; pos < chip.cram.bits(); pos++) {
-            file << chip.cram.get_bit(idx, pos);
+            out << chip.cram.get_bit(idx, pos);
         }
-        file << std::endl;
+        out << std::endl;
     }
 }
 
