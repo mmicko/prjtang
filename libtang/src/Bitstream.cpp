@@ -36,8 +36,9 @@ enum class BitstreamCommand : uint8_t {
     CMD_AC = 0xac,
     CMD_B1 = 0xb1,
     CPLD_DATA = 0xaa,
-    DUMMY = 0xff,
-    ZERO = 0x00
+    DUMMY_FF = 0xff,
+    DUMMY_EE = 0xee,
+    DUMMY_00 = 0x00
 };
 
 class Crc16 {
@@ -303,17 +304,35 @@ Chip Bitstream::deserialise_chip()
     if (!found_preamble)
         throw BitstreamParseError("preamble not found in bitstream");
 
+    bool is_cpld = false;
     while (!rd.is_end()) {
         uint16_t block_size = rd.get_block_size();
         rd.crc16.reset_crc16();
         BitstreamCommand cmd = rd.get_command_opcode();
-        if (cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO && cmd!=BitstreamCommand::MEMORY_DATA) {
+        bool is_cpld_command = false;
+        switch(cmd) {
+            case BitstreamCommand::DEVICEID_CPLD:
+            case BitstreamCommand::RESET_CRC_CPLD:
+            case BitstreamCommand::CMD_A1:
+            case BitstreamCommand::CMD_A3:
+            case BitstreamCommand::CMD_AC:
+            case BitstreamCommand::CMD_B1:
+            case BitstreamCommand::CPLD_DATA:
+                is_cpld_command = true;
+                break;
+            case BitstreamCommand::CMD_C4:
+                if (is_cpld)
+                    is_cpld_command = true;
+                break;
+            default:
+                is_cpld_command = false;
+        }
+        uint16_t cmd_size = 0;
+        if (cmd!=BitstreamCommand::DUMMY_FF && cmd!=BitstreamCommand::DUMMY_EE && cmd!=BitstreamCommand::DUMMY_00 && cmd!=BitstreamCommand::MEMORY_DATA) {
             uint8_t flag = rd.get_byte();
-            //printf("%02x %02x %04x\n",(uint8_t) cmd, flag, block_size);
             if (!flag) {
-                uint8_t cmd_size = rd.get_uint16();
-                //printf("%02x %02x %d %d\n",(uint8_t) cmd, flag, block_size, cmd_size);
-                if ((block_size - 4) != cmd_size)
+                cmd_size = rd.get_uint16();
+                if (!is_cpld_command && (block_size - 4) != cmd_size)
                     throw BitstreamParseError("error parsing command");
             }
         }
@@ -336,6 +355,11 @@ Chip Bitstream::deserialise_chip()
                 BITSTREAM_NOTE("version and usercode 0x"<< hex << setw(8) << setfill('0') << chip->usercode);
                 break;
             case BitstreamCommand::CFG_1:
+                if (!chip) {
+                    // al3_s10 device bitstreams do not have deviceid set
+                    chip = boost::make_optional(Chip(0x12006c31));
+                    chip->metadata = metadata;
+                }   
                 BITSTREAM_DEBUG("CFG_1");
                 chip->cfg1 = rd.get_uint32();
                 break;
@@ -368,7 +392,7 @@ Chip Bitstream::deserialise_chip()
                 break;
             case BitstreamCommand::CMD_F3:
                 BITSTREAM_DEBUG("CMD_F3");
-                rd.get_uint32();
+                rd.skip_bytes(cmd_size-2);
                 break;
             case BitstreamCommand::CMD_F5:
                 BITSTREAM_DEBUG("CMD_F5");
@@ -376,7 +400,11 @@ Chip Bitstream::deserialise_chip()
                 break;
             case BitstreamCommand::CMD_C4:
                 BITSTREAM_DEBUG("CMD_C4");
-                rd.get_uint32();
+                if (!is_cpld)
+                    rd.get_uint32();
+                else {
+                    rd.get_uint16();
+                }
                 break;
             case BitstreamCommand::CMD_C5:
                 BITSTREAM_DEBUG("CMD_C5");
@@ -445,17 +473,70 @@ Chip Bitstream::deserialise_chip()
                 rd.skip_bytes(4); // padding
                 break;
             }
-            case BitstreamCommand::DUMMY:
-            case BitstreamCommand::ZERO:
+            case BitstreamCommand::DUMMY_FF:
+            case BitstreamCommand::DUMMY_EE:
+            case BitstreamCommand::DUMMY_00:
                 // first byte is read as cmd
                 BITSTREAM_NOTE("padding block_size " << dec << block_size);
                 rd.skip_bytes(block_size-1);
                 break;
+
+            // CPLD specific
+            case BitstreamCommand::RESET_CRC_CPLD:
+                BITSTREAM_DEBUG("reset crc");
+                rd.get_byte();
+                data_crc16.reset_crc16();
+                break;
+            case BitstreamCommand::DEVICEID_CPLD: {
+                uint32_t id = rd.get_uint32();
+                BITSTREAM_NOTE("device ID: 0x" << hex << setw(8) << setfill('0') << id);
+                chip = boost::make_optional(Chip(id));
+                chip->metadata = metadata;
+                is_cpld = true;
+                break;
+            }
+
+            case BitstreamCommand::CMD_A1:
+            case BitstreamCommand::CMD_A3:
+            case BitstreamCommand::CMD_AC:
+            case BitstreamCommand::CMD_B1:
+                rd.skip_bytes(block_size-3-3);
+                break;
+            case BitstreamCommand::CPLD_DATA: {
+                uint16_t frames = cmd_size;
+                uint16_t bytes_per_frame = chip->info.bits_per_frame / 8L;
+                unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bytes_per_frame);
+                // taking current CRC16
+                data_crc16.crc16 = rd.crc16.crc16;
+                for (int idx = 0; idx < frames; idx++) {
+                    block_size = rd.get_block_size();
+                    rd.get_bytes(frame_bytes.get(), bytes_per_frame);
+                    // Update CRC16 for complete frame
+                    for (size_t i = 0; i < bytes_per_frame; i++) {
+                        data_crc16.update_crc16(frame_bytes[i]);
+                    }
+                    uint16_t actual_crc = data_crc16.finalise_crc16();
+                    uint16_t exp_crc = rd.get_uint16(); // crc 
+                    if (actual_crc != exp_crc) {
+                        ostringstream err;
+                        err << "crc fail, calculated 0x" << hex << actual_crc << " but expecting 0x" << exp_crc;
+                        printf("%s\n",err.str().c_str());
+                        throw BitstreamParseError(err.str());
+                    }
+                                      
+                    for (uint32_t j = 0; j < chip->info.bits_per_frame; j++) {
+                        chip->cram.bit(idx, j) = (char) ((frame_bytes[(j / 8)]<< (j % 8)) & 0x80);
+                    }
+                    data_crc16.reset_crc16();    
+                }
+                break;
+            }
+
             default:
                 BITSTREAM_FATAL("unsupported command 0x" << hex << setw(2) << setfill('0') << int(cmd), rd.get_offset());
         }
 
-        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::DUMMY && cmd!=BitstreamCommand::ZERO && cmd!=BitstreamCommand::MEMORY_DATA) {
+        if (cmd!=BitstreamCommand::FUSE_DATA && cmd!=BitstreamCommand::CPLD_DATA && cmd!=BitstreamCommand::DUMMY_FF && cmd!=BitstreamCommand::DUMMY_EE && cmd!=BitstreamCommand::DUMMY_00 && cmd!=BitstreamCommand::MEMORY_DATA) {
             rd.check_crc16();
         }
     }
