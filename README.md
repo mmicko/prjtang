@@ -21,7 +21,7 @@ Translation of offical documents can be found [here](https://github.com/kprasadv
 
 ### Quickstart Guide
 
-Take latest TD distribution from [Sipeed.com](http://dl.sipeed.com/TANG/Premier/IDE/TD1909_linux.rar)
+Take latest TD distribution from [Sipeed.com](https://mega.nz/folder/5AAiSBwB#0jbOgqcrIMJVU9FvCzqb0A/folder/ZY50yRhI)
 Point out TD_HOME to your TangDinasty installation and set environment.
 
 ```
@@ -31,30 +31,19 @@ source environment.sh
 
 ## Process
 
-To extract tilegrid information run:
+To create chip database run:
 
 ```
-python get_tilegrid_all.py
+python3 create_database.py
 ```
 
 In order to get HTML representation of tilegrid data after run:
 
 ```
-python html_all.py
+python3 html_all.py
 ```
 
 ### Parts
-
-#### [Minitests](minitests)
-
-There are also "minitests" which are small tests of features used to build fuzers.
-
-#### [Fuzzers](fuzzers)
-
-Fuzzers are the scripts which generate the large number of bitstream.
-
-They are called "fuzzers" because they follow an approach similar to the
-[idea of software testing through fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
 
 #### [Tools](tools)
 
@@ -71,6 +60,7 @@ bitstream format in the [database](database) directory.
 
 ## Credits
 
+Code is heavily based on [prjtrellis](https://github.com/YosysHQ/prjtrellis). Special thanks goes to [@gatecat](https://github.com/gatecat)
 ## Contributing
 
 There are a couple of guidelines when contributing to Project Tang which are
