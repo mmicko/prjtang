@@ -11,6 +11,7 @@
                     "max_row": 72,
                     "frames": 1259,
                     "bits_per_frame": 3904,
+                    "db_bits_per_frame": 3892,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -24,6 +25,7 @@
                     "max_row": 72,
                     "frames": 1259,
                     "bits_per_frame": 3904,
+                    "db_bits_per_frame": 3892,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -38,6 +40,7 @@
                     "max_row": 72,
                     "frames": 1259,
                     "bits_per_frame": 3904,
+                    "db_bits_per_frame": 3892,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 }
@@ -54,7 +57,8 @@
                     "max_col": 10,
                     "max_row": 9,
                     "frames": 154,
-                    "bits_per_frame": 685,
+                    "bits_per_frame": 688,
+                    "db_bits_per_frame": 685,
                     "bram_bits_per_frame": 0,
                     "gap": 0
 
@@ -69,7 +73,8 @@
                     "max_col": 10,
                     "max_row": 9,
                     "frames": 154,
-                    "bits_per_frame": 685,
+                    "bits_per_frame": 688,
+                    "db_bits_per_frame": 685,
                     "bram_bits_per_frame": 0,
                     "gap": 0
                 }
@@ -86,7 +91,8 @@
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
-                    "bits_per_frame": 1622,
+                    "bits_per_frame": 1632,
+                    "db_bits_per_frame": 1622,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -98,7 +104,8 @@
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
-                    "bits_per_frame": 1622,
+                    "bits_per_frame": 1632,
+                    "db_bits_per_frame": 1622,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -112,7 +119,8 @@
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
-                    "bits_per_frame": 1622,
+                    "bits_per_frame": 1632,
+                    "db_bits_per_frame": 1622,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -124,7 +132,8 @@
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
-                    "bits_per_frame": 1622,
+                    "bits_per_frame": 1632,
+                    "db_bits_per_frame": 1622,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 }
@@ -139,7 +148,8 @@
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
-                    "bits_per_frame": 1622,
+                    "bits_per_frame": 1632,
+                    "db_bits_per_frame": 1622,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -150,7 +160,8 @@
                     "max_col": 25,
                     "max_row": 30,
                     "frames": 765,
-                    "bits_per_frame": 1622,
+                    "bits_per_frame": 1632,
+                    "db_bits_per_frame": 1622,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -162,7 +173,8 @@
                     "max_col": 34,
                     "max_row": 42,
                     "frames": 1046,
-                    "bits_per_frame": 2282,
+                    "bits_per_frame": 2288,
+                    "db_bits_per_frame": 2282,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 },
@@ -173,7 +185,8 @@
                     "max_col": 34,
                     "max_row": 42,
                     "frames": 1046,
-                    "bits_per_frame": 2282,
+                    "bits_per_frame": 2288,
+                    "db_bits_per_frame": 2282,
                     "bram_bits_per_frame": 9216,
                     "gap": 0
                 }
@@ -189,7 +202,8 @@
                     "max_col": 35,
                     "max_row": 38,
                     "frames": 1075,
-                    "bits_per_frame": 2052,
+                    "bits_per_frame": 2056,
+                    "db_bits_per_frame": 2052,
                     "bram_bits_per_frame": 9216,
                     "gap": 64
                 },
@@ -202,7 +216,8 @@
                     "max_col": 35,
                     "max_row": 38,
                     "frames": 1075,
-                    "bits_per_frame": 2052,
+                    "bits_per_frame": 2056,
+                    "db_bits_per_frame": 2052,
                     "bram_bits_per_frame": 9216,
                     "gap": 64
                 },
@@ -214,7 +229,8 @@
                     "max_col": 35,
                     "max_row": 38,
                     "frames": 1075,
-                    "bits_per_frame": 2052,
+                    "bits_per_frame": 2056,
+                    "db_bits_per_frame": 2052,
                     "bram_bits_per_frame": 9216,
                     "gap": 64
                 }
@@ -231,6 +247,7 @@
                     "max_row": 160,
                     "frames": 3058,
                     "bits_per_frame": 10368,
+                    "db_bits_per_frame": 10368,
                     "bram_bits_per_frame": 9216,
                     "gap": 64
                 }
