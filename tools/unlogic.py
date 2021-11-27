@@ -96,7 +96,7 @@ def decode_chipdb(argv):
 	keypos = 0
 	key = ""
 	is_ph1 = False
-	tiles = []
+	tiles = dict()
 
 	if "decrypt" in file_paths.keys():
 		decrypt = open(file_paths["decrypt"], "wt")
@@ -465,7 +465,7 @@ def decode_chipdb(argv):
 				assert x==int(unk[2])
 				assert y==int(unk[3])
 				current_item = {
-					"inst": unk[0],
+					#"inst": unk[0],
 					"type": unk[1],
 					"x": int(unk[2]),
 					"y": int(unk[3]),
@@ -476,7 +476,8 @@ def decode_chipdb(argv):
 					"bl_beg": int(unk[7]),
 					"flag": int(unk[8])
 				}
-				tiles.append(current_item)
+				
+				tiles[unk[0]] = current_item
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
 				assert len(empty)==0
