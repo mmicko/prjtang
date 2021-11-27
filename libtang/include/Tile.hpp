@@ -27,6 +27,7 @@ struct TileInfo {
     size_t bit_offset;
     size_t row;
     size_t col;
+    int flag;
 
     inline pair<int, int> get_row_col() const {
         return make_pair((int)row,(int)col);

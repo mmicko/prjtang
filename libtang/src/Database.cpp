@@ -117,6 +117,7 @@ vector<TileInfo> get_device_tilegrid(const DeviceLocator &part) {
             ti.bit_offset = size_t(tile.second.get<int>("wl_beg"));
             ti.frame_offset = size_t(tile.second.get<int>("bl_beg"));
             ti.type = tile.second.get<string>("type");
+            ti.flag = size_t(tile.second.get<int>("flag"));
             tilesInfo.push_back(ti);
         }
     }

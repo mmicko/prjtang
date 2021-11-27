@@ -52,7 +52,7 @@ string Chip::get_tile_by_position_and_type(int row, int col, string type) {
         if (tile.second == type)
             return tile.first;
     }
-    throw runtime_error(fmt("no suitable tile found at R" << row << "C" << col));
+    throw runtime_error(fmt("no suitable tile found at X" << col << "Y" << row));
 }
 
 string Chip::get_tile_by_position_and_type(int row, int col, set<string> type) {
@@ -60,7 +60,7 @@ string Chip::get_tile_by_position_and_type(int row, int col, set<string> type) {
         if (type.find(tile.second) != type.end())
             return tile.first;
     }
-    throw runtime_error(fmt("no suitable tile found at R" << row << "C" << col));
+    throw runtime_error(fmt("no suitable tile found at X" << col << "Y" << row));
 }
 
 
