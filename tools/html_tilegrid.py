@@ -53,13 +53,12 @@ def main(argv):
 			row.append([])
 		tiles.append(row)
 
-	for row in tilegrid:
-		for item in row:
-			x = int(item["x"])
-			y = int(item["y"])
-			for data in item["val"]:
-				colour = get_colour(data["type"])
-				tiles[y][x].append((data["inst"], data["type"], colour))
+	for item in tilegrid:
+		x = int(item["x"])
+		y = int(item["y"])
+		colour = get_colour(item["type"])
+		tiles[y][x].append((item["inst"], item["type"], colour))
+
 
 	f = args.outfile
 	print(

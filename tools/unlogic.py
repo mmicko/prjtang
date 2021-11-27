@@ -4,9 +4,7 @@ import os
 import json
 
 decrypt = None
-inst = dict()
 bcc_info = dict()
-info = []
 def print_decrypt(val):
 	global decrypt
 	if (decrypt):
@@ -450,15 +448,7 @@ def decode_chipdb(argv):
 		
 		max_col = int(blocks[1])
 		max_row = int(blocks[2])
-		for i in range(max_row ):
-			row = []
-			for j in range(max_col):
-				row.append([])
-			tiles.append(row)
-			row2 = []
-			for j in range(max_col):
-				row2.append([])
-			info.append(row2)
+
 		bl = int(blocks[8])
 		bl2 = int(blocks[7])
 		total_num = 0		
@@ -469,9 +459,6 @@ def decode_chipdb(argv):
 			y = int(unk[1])
 			num = int(unk[2])
 			total_num += num
-			tile_val = []
-			global inst
-			info[y][x] = dict()
 			for j in range(num):
 				unk,out  = decode(fp, [0,1])
 				print_decrypt(out)
@@ -480,26 +467,20 @@ def decode_chipdb(argv):
 				current_item = {
 					"inst": unk[0],
 					"type": unk[1],
+					"x": int(unk[2]),
+					"y": int(unk[3]),
+					"z": j,
 					"w": int(unk[4]),
 					"h": int(unk[5]),
 					"wl_beg": int(unk[6]),
 					"bl_beg": int(unk[7]),
 					"flag": int(unk[8])
 				}
-				tile_val.append(current_item)
-				inst[unk[0]] = current_item
-				if (int(unk[8])==-1):
-					info[y][x][unk[1]] = current_item
+				tiles.append(current_item)
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
 				assert len(empty)==0
 
-			current_tile = {
-				"x": x,
-				"y": y,
-				"val": tile_val
-			}
-			tiles[y][x] = current_tile
 		assert(total_num == bl2)
 		empty,out  = decode(fp, [])
 		print_decrypt(out)
