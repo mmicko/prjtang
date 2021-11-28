@@ -22,12 +22,13 @@ int main(int argc, char *argv[])
     po::options_description options("Allowed options");
     options.add_options()("help,h", "show help");
     options.add_options()("bit", po::value<std::string>(), "output bit file");
-    //options.add_options()("bin", po::value<std::string>(), "output bin file");
-    //options.add_options()("bas", po::value<std::string>(), "output bas file");
+    options.add_options()("bin", po::value<std::string>(), "output bin file");
     options.add_options()("fuse", po::value<std::string>(), "output fuse file");
-//    options.add_options()("bmk", po::value<std::string>(), "output bmk file");
-    //options.add_options()("bma", po::value<std::string>(), "output bma file");
-    //options.add_options()("svf", po::value<std::string>(), "output svf file");
+    options.add_options()("bas", po::value<std::string>(), "output bas file");
+    options.add_options()("bmk", po::value<std::string>(), "output bmk file");
+    options.add_options()("bma", po::value<std::string>(), "output bma file");
+    options.add_options()("svf", po::value<std::string>(), "output svf file");
+    options.add_options()("rbf", po::value<std::string>(), "output rbf file");
     //options.add_options()("verbose", "show parsing info");
     //options.add_options()("verbose_data", "show additional parsing data");
     options.add_options()("db", po::value<std::string>(), "Tang database folder location");
@@ -78,7 +79,8 @@ int main(int argc, char *argv[])
     }
 
     try {
-        Chip c = Bitstream::read(bitstream_file).deserialise_chip();
+        Bitstream bitstream = Bitstream::read(bitstream_file);
+        Chip c = bitstream.deserialise_chip();
         //bitstream.parse(verbose, vm.count("verbose_data"));
         //if (verbose)
             //printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
@@ -88,16 +90,16 @@ int main(int argc, char *argv[])
         }
         if (vm.count("bit")) {
             ofstream output_stream(vm["bit"].as<string>(), ios::out | ios::trunc | ios::binary);
-            Bitstream bitstream = Bitstream::serialise_chip(c, map<string, string>());
+            //Bitstream bitstream = Bitstream::serialise_chip(c, map<string, string>());
             bitstream.write_bit(output_stream);
-        }
-/*        if (vm.count("bas")) {
-            ofstream output_stream(vm["bas"].as<string>(), ios::out | ios::trunc);
-            bitstream.write_bas(output_stream);
         }
         if (vm.count("bin")) {
             ofstream output_stream(vm["bin"].as<string>(), ios::out | ios::trunc | ios::binary);
             bitstream.write_bin(output_stream);
+        }
+        if (vm.count("bas")) {
+            ofstream output_stream(vm["bas"].as<string>(), ios::out | ios::trunc);
+            bitstream.write_bas(output_stream);
         }
         if (vm.count("bma")) {
             ofstream output_stream(vm["bma"].as<string>(), ios::out | ios::trunc);
@@ -107,10 +109,14 @@ int main(int argc, char *argv[])
             ofstream output_stream(vm["bmk"].as<string>(), ios::out | ios::trunc | ios::binary);
             bitstream.write_bmk(output_stream);
         }
+        if (vm.count("rbf")) {
+            ofstream output_stream(vm["rbf"].as<string>(), ios::out | ios::trunc | ios::binary);
+            bitstream.write_rbf(output_stream);
+        }
         if (vm.count("svf")) {
             ofstream output_stream(vm["svf"].as<string>(), ios::out | ios::trunc);
             bitstream.write_svf(output_stream);
-        }*/
+        }
     } catch (BitstreamParseError &e) {
         cerr << e.what() << endl;
     }

@@ -25,12 +25,13 @@ class Bitstream
     static void write_fuse(const Chip &chip, std::ostream &out);
     
     void write_bit(std::ostream &out);
-    /*void write_bin(const Chip &chip, std::ostream &out);
-    void write_bas(const Chip &chip, std::ostream &out);
-    void write_bmk(const Chip &chip, std::ostream &out);
-    void write_bma(const Chip &chip, std::ostream &out);
-    void write_svf(const Chip &chip, std::ostream &out);
-*/
+    void write_bin(std::ostream &out);
+    void write_bas(std::ostream &out);
+    void write_bmk(std::ostream &out);
+    void write_bma(std::ostream &out);
+    void write_rbf(std::ostream &out);
+    void write_svf(std::ostream &out);
+
     // Serialise a Chip back to a bitstream
     static Bitstream serialise_chip(const Chip &chip, const std::map<std::string, std::string> options);
 

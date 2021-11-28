@@ -55,7 +55,7 @@ DeviceLocator find_device_by_name(string name) {
 
 DeviceLocator find_device_by_part(string part) {
     auto found = find_device_generic([part](const string &n, const pt::ptree &p) -> bool {
-        UNUSED(p);
+        UNUSED(n);
         for (const pt::ptree::value_type &package : p.get_child("packages")) {
             if (package.second.get<string>("part") == part) return true;
         }

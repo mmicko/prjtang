@@ -672,6 +672,202 @@ void Bitstream::write_bit(std::ostream &out)
     out.write(reinterpret_cast<const char *>(&(data[0])), data.size());
 }
 
+void Bitstream::write_bin(std::ostream &out)
+{
+    for (auto &block : blocks) {
+        out.write(reinterpret_cast<const char *>(&(block[0])), block.size());
+    }
+}
+
+void Bitstream::write_bas(std::ostream &out) {
+    for (const auto &meta : metadata) {
+        out << meta << std::endl;
+    }
+    for (const auto &block : blocks) {
+        for (size_t pos = 0; pos < block.size(); pos++) {
+            out << std::bitset<8>(block[pos]);
+        }
+        out << std::endl;
+    }
+}
+void Bitstream::write_bmk(std::ostream &out) {
+    for (const auto &meta : metadata) {
+        if (boost::starts_with(meta, "# Bitstream CRC:"))
+            continue;
+        if (boost::starts_with(meta, "# USER CODE:"))
+            continue;
+        out << meta << std::endl;
+    }
+/*    for (auto it = blocks.begin(); it != (blocks.begin() + fuse_start_block); ++it) {
+        uint16_t size = it->size() << 3;
+        out << uint8_t(size >> 8) << uint8_t(size & 0xff);
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            out << ((*it)[pos]);
+        }
+    }
+    for (auto it = blocks.begin() + fuse_start_block; it != (blocks.begin() + fuse_start_block + frames + 1); ++it) {
+        uint16_t size = it->size() << 3;
+        out << uint8_t(size >> 8) << uint8_t(size & 0xff);
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            out << uint8_t(0);
+        }
+    }
+    for (auto it = blocks.begin() + fuse_start_block + frames + 1; it != blocks.end(); ++it) {
+        if ((*it)[0] == 0)
+            break;
+        uint16_t size = it->size() << 3;
+        out << uint8_t(size >> 8) << uint8_t(size & 0xff);
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            out << (*it)[pos];
+        }
+    }*/
+}
+
+void Bitstream::write_bma(std::ostream &out) {
+    for (const auto &meta : metadata) {
+        if (boost::starts_with(meta, "# Bitstream CRC:"))
+            continue;
+        if (boost::starts_with(meta, "# USER CODE:"))
+            continue;
+        out << meta << std::endl;
+    }
+/*    for (auto it = blocks.begin(); it != (blocks.begin() + fuse_start_block); ++it) {
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            out << std::bitset<8>((*it)[pos]);
+        }
+        out << std::endl;
+    }
+    for (auto it = blocks.begin() + fuse_start_block; it != (blocks.begin() + fuse_start_block + frames + 1); ++it) {
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            out << std::bitset<8>(0);
+        }
+        out << std::endl;
+    }
+    for (auto it = blocks.begin() + fuse_start_block + frames + 1; it != blocks.end(); ++it) {
+        if ((*it)[0] == 0)
+            break;
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            out << std::bitset<8>((*it)[pos]);
+        }
+        out << std::endl;
+    }*/
+}
+
+static uint8_t reverse_byte(uint8_t byte)
+{
+    uint8_t rev = 0;
+    for (int i = 0; i < 8; i++)
+        if (byte & (1 << i))
+            rev |= (1 << (7 - i));
+    return rev;
+}
+
+void Bitstream::write_rbf(std::ostream &out)
+{
+    for (auto &block : blocks) {
+        for(auto byte : block) {
+            uint8_t val = reverse_byte(byte);
+            out.write(reinterpret_cast<const char *>(&val), 1);
+        }
+    }
+}
+void Bitstream::write_svf(std::ostream &out) {
+    uint32_t deviceid = 0x00000000; // TODO: take from bitstream
+    out << "// Created using Project Tang Software" << std::endl;
+    out << std::endl;
+    out << "TRST OFF;" << std::endl;
+    out << "ENDIR IDLE;" << std::endl;
+    out << "ENDDR IDLE;" << std::endl;
+    out << "STATE RESET;" << std::endl;
+    out << "STATE IDLE;" << std::endl;
+    out << "FREQUENCY 1E6 HZ;" << std::endl;
+    // Operation: Program
+    out << "TIR 0 ;" << std::endl;
+    out << "HIR 0 ;" << std::endl;
+    out << "TDR 0 ;" << std::endl;
+    out << "HDR 0 ;" << std::endl;
+    out << "TIR 0 ;" << std::endl;
+    out << "HIR 0 ;" << std::endl;
+    out << "HDR 0 ;" << std::endl;
+    out << "TDR 0 ;" << std::endl;
+    // Loading device with 'idcode' instruction.
+    out << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
+    out << "RUNTEST 15 TCK;" << std::endl;
+    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << deviceid
+        << ") MASK (ffffffff) ;" << std::endl;
+    // Boundary Scan Chain Contents
+    // Position 1: BG256
+    out << "TIR 0 ;" << std::endl;
+    out << "HIR 0 ;" << std::endl;
+    out << "TDR 0 ;" << std::endl;
+    out << "HDR 0 ;" << std::endl;
+    out << "TIR 0 ;" << std::endl;
+    out << "HIR 0 ;" << std::endl;
+    out << "TDR 0 ;" << std::endl;
+    out << "HDR 0 ;" << std::endl;
+    out << "TIR 0 ;" << std::endl;
+    out << "HIR 0 ;" << std::endl;
+    out << "HDR 0 ;" << std::endl;
+    out << "TDR 0 ;" << std::endl;
+    // Loading device with 'idcode' instruction.
+    out << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
+    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << deviceid
+         << ") MASK (ffffffff) ;" << std::endl;
+    // Loading device with 'refresh' instruction.
+    out << "SIR 8 TDI (01) SMASK (ff) ;" << std::endl;
+    // Loading device with 'bypass' instruction.
+    out << "SIR 8 TDI (1f) ;" << std::endl;
+    out << "SIR 8 TDI (39) ;" << std::endl;
+    out << "RUNTEST 50000 TCK;" << std::endl;
+    // Loading device with 'jtag program' instruction.
+    out << "SIR 8 TDI (30) SMASK (ff) ;" << std::endl;
+    out << "RUNTEST 15 TCK;" << std::endl;
+    // Loading device with a `cfg_in` instruction.
+    out << "SIR 8 TDI (3b) SMASK (ff) ;" << std::endl;
+    out << "RUNTEST 15 TCK;" << std::endl;
+
+    size_t count = 0;
+    for (auto const &block : blocks) {
+        count += block.size();
+    }
+    // Begin of bitstream data
+    out << "SDR " << std::dec << int(count * 8) << " TDI (" << std::endl;
+    int i = 0;
+    for (auto it = blocks.rbegin(); it != blocks.rend(); ++it) {
+        for (size_t pos = 0; pos < it->size(); pos++) {
+            out << std::hex << std::setw(2) << std::setfill('0') << int(reverse_byte(((*it)[it->size() - pos - 1])));
+            i++;
+            if ((i % 1024) == 0)
+                out << std::endl;
+        }
+    }
+    out << std::endl << ") SMASK (" << std::endl;
+    for (size_t j = 1; j < count + 1; j++) {
+        out << "ff";
+        if ((j % 1024) == 0)
+            out << std::endl;
+    }
+    out << std::endl << ") ;" << std::endl;
+
+    out << "RUNTEST 100 TCK;" << std::endl;
+    // Loading device with a `jtag start` instruction.
+    out << "SIR 8 TDI (3d) ;" << std::endl;
+    out << "RUNTEST 15 TCK;" << std::endl;
+    // Loading device with 'bypass' instruction.
+    out << "SIR 8 TDI (1f) ;" << std::endl;
+    out << "RUNTEST 1000 TCK;" << std::endl;
+    out << "TIR 0 ;" << std::endl;
+    out << "HIR 0 ;" << std::endl;
+    out << "HDR 0 ;" << std::endl;
+    out << "TDR 0 ;" << std::endl;
+    out << "TIR 0 ;" << std::endl;
+    out << "HIR 0 ;" << std::endl;
+    out << "HDR 0 ;" << std::endl;
+    out << "TDR 0 ;" << std::endl;
+    // Loading device with 'bypass' instruction.
+    out << "SIR 8 TDI (1f) ;" << std::endl;
+}
+
 Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>) {
     BitstreamReadWriter wr;
     wr.insert_dummy_block(0xff, 16);
@@ -683,7 +879,7 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
         wr.write_block(blk.get());
     }
 
-    wr.insert_cmd_uint32(BitstreamCommand::DEVICEID, 0x10006c31);
+    wr.insert_cmd_uint32(BitstreamCommand::DEVICEID, chip.idcode);
     wr.insert_cmd_uint32(BitstreamCommand::CFG_1, chip.cfg1);
     wr.insert_cmd_uint32(BitstreamCommand::CFG_2, chip.cfg2);
     wr.insert_cmd_uint32(BitstreamCommand::FRAMES, (chip.info.num_frames << 16) + (chip.info.bits_per_frame >> 3));
