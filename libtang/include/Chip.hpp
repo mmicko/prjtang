@@ -69,6 +69,9 @@ public:
     uint32_t usercode = 0x00000000;
     uint32_t cfg1;
     uint32_t cfg2;
+    uint32_t cfg_c4;
+    uint32_t cfg_c5;
+    uint32_t cfg_ca;
     vector<string> metadata;
 
 

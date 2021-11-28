@@ -284,6 +284,15 @@ public:
         blk.insert_crc16();
         write_block(blk.get());
     }
+    void insert_cmd_uint16(BitstreamCommand cmd, uint16_t val) {
+        BlockReadWriter blk;
+        blk.write_byte((uint8_t)cmd);
+        blk.write_byte(0x00);
+        blk.write_uint16(4);
+        blk.write_uint16(val);
+        blk.insert_crc16();
+        write_block(blk.get());
+    }
 private:
 
     vector<uint8_t> data;
@@ -510,18 +519,18 @@ Chip Bitstream::deserialise_chip()
             case BitstreamCommand::CMD_C4:
                 BITSTREAM_DEBUG("CMD_C4");
                 if (!is_cpld)
-                    rd.get_uint32();
+                    chip->cfg_c4 = rd.get_uint32();
                 else {
-                    rd.get_uint16();
+                    chip->cfg_c4 = rd.get_uint16();
                 }
                 break;
             case BitstreamCommand::CMD_C5:
                 BITSTREAM_DEBUG("CMD_C5");
-                rd.get_uint32();
+                chip->cfg_c5 = rd.get_uint32();
                 break;
             case BitstreamCommand::CMD_CA:
                 BITSTREAM_DEBUG("CMD_CA");
-                rd.get_uint32();
+                chip->cfg_ca = rd.get_uint32();
                 break;
             case BitstreamCommand::FUSE_DATA: {
                 uint16_t frames = rd.get_uint16();
@@ -677,7 +686,11 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
     wr.insert_cmd_uint32(BitstreamCommand::DEVICEID, 0x10006c31);
     wr.insert_cmd_uint32(BitstreamCommand::CFG_1, chip.cfg1);
     wr.insert_cmd_uint32(BitstreamCommand::CFG_2, chip.cfg2);
-    //wr.insert_cmd_uint32(BitstreamCommand::FRAMES, chip.info.);
+    wr.insert_cmd_uint32(BitstreamCommand::FRAMES, (chip.info.num_frames << 16) + (chip.info.bits_per_frame >> 3));
+    wr.insert_cmd_uint32(BitstreamCommand::MEM_FRAME, chip.info.bram_bits_per_frame >> 3);
+    wr.insert_cmd_uint32(BitstreamCommand::VERSION_UCODE, chip.usercode);
+    wr.insert_cmd_uint32(BitstreamCommand::CMD_C4, chip.cfg_c4);
+    wr.insert_cmd_uint16(BitstreamCommand::RESET_CRC, 0x0000);
 
     return Bitstream(wr.get(), chip.metadata);
 }
