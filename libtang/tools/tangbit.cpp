@@ -29,8 +29,6 @@ int main(int argc, char *argv[])
     options.add_options()("bma", po::value<std::string>(), "output bma file");
     options.add_options()("svf", po::value<std::string>(), "output svf file");
     options.add_options()("rbf", po::value<std::string>(), "output rbf file");
-    //options.add_options()("verbose", "show parsing info");
-    //options.add_options()("verbose_data", "show additional parsing data");
     options.add_options()("db", po::value<std::string>(), "Tang database folder location");
 
     po::positional_options_description pos;
@@ -59,8 +57,6 @@ int main(int argc, char *argv[])
         return vm.count("help") ? 0 : 1;
     }
 
-    //bool verbose = vm.count("verbose");
-
     ifstream bitstream_file(vm["input"].as<string>());
     if (!bitstream_file) {
         cerr << "Failed to open input file" << endl;
@@ -81,16 +77,12 @@ int main(int argc, char *argv[])
     try {
         Bitstream bitstream = Bitstream::read(bitstream_file);
         Chip c = bitstream.deserialise_chip();
-        //bitstream.parse(verbose, vm.count("verbose_data"));
-        //if (verbose)
-            //printf("Bitstream CRC calculated: 0x%04x\n", (unsigned int)bitstream.calculate_bitstream_crc());
         if (vm.count("fuse")) {
             ofstream output_stream(vm["fuse"].as<string>(), ios::out | ios::trunc);
             Bitstream::write_fuse(c, output_stream);
         }
         if (vm.count("bit")) {
             ofstream output_stream(vm["bit"].as<string>(), ios::out | ios::trunc | ios::binary);
-            //Bitstream bitstream = Bitstream::serialise_chip(c, map<string, string>());
             bitstream.write_bit(output_stream);
         }
         if (vm.count("bin")) {
@@ -103,11 +95,11 @@ int main(int argc, char *argv[])
         }
         if (vm.count("bma")) {
             ofstream output_stream(vm["bma"].as<string>(), ios::out | ios::trunc);
-            bitstream.write_bma(output_stream);
+            bitstream.write_bma(c, output_stream);
         }
         if (vm.count("bmk")) {
             ofstream output_stream(vm["bmk"].as<string>(), ios::out | ios::trunc | ios::binary);
-            bitstream.write_bmk(output_stream);
+            bitstream.write_bmk(c, output_stream);
         }
         if (vm.count("rbf")) {
             ofstream output_stream(vm["rbf"].as<string>(), ios::out | ios::trunc | ios::binary);
@@ -115,7 +107,7 @@ int main(int argc, char *argv[])
         }
         if (vm.count("svf")) {
             ofstream output_stream(vm["svf"].as<string>(), ios::out | ios::trunc);
-            bitstream.write_svf(output_stream);
+            bitstream.write_svf(c, output_stream);
         }
     } catch (BitstreamParseError &e) {
         cerr << e.what() << endl;

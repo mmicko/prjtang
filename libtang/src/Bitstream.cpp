@@ -690,7 +690,8 @@ void Bitstream::write_bas(std::ostream &out) {
         out << std::endl;
     }
 }
-void Bitstream::write_bmk(std::ostream &out) {
+
+void Bitstream::write_bmk(const Chip &chip, std::ostream &out) {
     for (const auto &meta : metadata) {
         if (boost::starts_with(meta, "# Bitstream CRC:"))
             continue;
@@ -698,32 +699,28 @@ void Bitstream::write_bmk(std::ostream &out) {
             continue;
         out << meta << std::endl;
     }
-/*    for (auto it = blocks.begin(); it != (blocks.begin() + fuse_start_block); ++it) {
+    for(auto it = blocks.begin(); it != blocks.end(); ++it) {
+        if (it->at(0) == (uint8_t)BitstreamCommand::DUMMY_00) continue;
         uint16_t size = it->size() << 3;
         out << uint8_t(size >> 8) << uint8_t(size & 0xff);
         for (size_t pos = 0; pos < it->size(); pos++) {
-            out << ((*it)[pos]);
+            out << uint8_t((*it)[pos]);
+        }
+        if (it->at(0) == (uint8_t)BitstreamCommand::FUSE_DATA) {
+            // adding one more block after frames with all zeros
+            for(int i=0;i<chip.info.num_frames+1;i++) {
+                it++;
+                uint16_t size = it->size() << 3;
+                out << uint8_t(size >> 8) << uint8_t(size & 0xff);
+                for (size_t pos = 0; pos < it->size(); pos++) {
+                    out << uint8_t(0);
+                }
+            }
         }
     }
-    for (auto it = blocks.begin() + fuse_start_block; it != (blocks.begin() + fuse_start_block + frames + 1); ++it) {
-        uint16_t size = it->size() << 3;
-        out << uint8_t(size >> 8) << uint8_t(size & 0xff);
-        for (size_t pos = 0; pos < it->size(); pos++) {
-            out << uint8_t(0);
-        }
-    }
-    for (auto it = blocks.begin() + fuse_start_block + frames + 1; it != blocks.end(); ++it) {
-        if ((*it)[0] == 0)
-            break;
-        uint16_t size = it->size() << 3;
-        out << uint8_t(size >> 8) << uint8_t(size & 0xff);
-        for (size_t pos = 0; pos < it->size(); pos++) {
-            out << (*it)[pos];
-        }
-    }*/
 }
 
-void Bitstream::write_bma(std::ostream &out) {
+void Bitstream::write_bma(const Chip &chip, std::ostream &out) {
     for (const auto &meta : metadata) {
         if (boost::starts_with(meta, "# Bitstream CRC:"))
             continue;
@@ -731,26 +728,23 @@ void Bitstream::write_bma(std::ostream &out) {
             continue;
         out << meta << std::endl;
     }
-/*    for (auto it = blocks.begin(); it != (blocks.begin() + fuse_start_block); ++it) {
+    for(auto it = blocks.begin(); it != blocks.end(); ++it) {
+        if (it->at(0) == (uint8_t)BitstreamCommand::DUMMY_00) continue;
         for (size_t pos = 0; pos < it->size(); pos++) {
             out << std::bitset<8>((*it)[pos]);
         }
         out << std::endl;
-    }
-    for (auto it = blocks.begin() + fuse_start_block; it != (blocks.begin() + fuse_start_block + frames + 1); ++it) {
-        for (size_t pos = 0; pos < it->size(); pos++) {
-            out << std::bitset<8>(0);
+        if (it->at(0) == (uint8_t)BitstreamCommand::FUSE_DATA) {
+            // adding one more block after frames with all zeros
+            for(int i=0;i<chip.info.num_frames+1;i++) {
+                it++;
+                for (size_t pos = 0; pos < it->size(); pos++) {
+                    out << std::bitset<8>(0);
+                }
+                out << std::endl;
+            }
         }
-        out << std::endl;
     }
-    for (auto it = blocks.begin() + fuse_start_block + frames + 1; it != blocks.end(); ++it) {
-        if ((*it)[0] == 0)
-            break;
-        for (size_t pos = 0; pos < it->size(); pos++) {
-            out << std::bitset<8>((*it)[pos]);
-        }
-        out << std::endl;
-    }*/
 }
 
 static uint8_t reverse_byte(uint8_t byte)
@@ -771,9 +765,10 @@ void Bitstream::write_rbf(std::ostream &out)
         }
     }
 }
-void Bitstream::write_svf(std::ostream &out) {
-    uint32_t deviceid = 0x00000000; // TODO: take from bitstream
+void Bitstream::write_svf(const Chip &chip, std::ostream &out) {
     out << "// Created using Project Tang Software" << std::endl;
+    out << "// Architecture: " << chip.info.name << std::endl;
+    //out << "// Package: " << chip.info << std::endl;
     out << std::endl;
     out << "TRST OFF;" << std::endl;
     out << "ENDIR IDLE;" << std::endl;
@@ -793,7 +788,7 @@ void Bitstream::write_svf(std::ostream &out) {
     // Loading device with 'idcode' instruction.
     out << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
     out << "RUNTEST 15 TCK;" << std::endl;
-    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << deviceid
+    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << chip.idcode
         << ") MASK (ffffffff) ;" << std::endl;
     // Boundary Scan Chain Contents
     // Position 1: BG256
@@ -811,7 +806,7 @@ void Bitstream::write_svf(std::ostream &out) {
     out << "TDR 0 ;" << std::endl;
     // Loading device with 'idcode' instruction.
     out << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
-    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << deviceid
+    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << chip.idcode
          << ") MASK (ffffffff) ;" << std::endl;
     // Loading device with 'refresh' instruction.
     out << "SIR 8 TDI (01) SMASK (ff) ;" << std::endl;

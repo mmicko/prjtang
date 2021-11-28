@@ -27,10 +27,10 @@ class Bitstream
     void write_bit(std::ostream &out);
     void write_bin(std::ostream &out);
     void write_bas(std::ostream &out);
-    void write_bmk(std::ostream &out);
-    void write_bma(std::ostream &out);
+    void write_bmk(const Chip &chip, std::ostream &out);
+    void write_bma(const Chip &chip, std::ostream &out);
     void write_rbf(std::ostream &out);
-    void write_svf(std::ostream &out);
+    void write_svf(const Chip &chip, std::ostream &out);
 
     // Serialise a Chip back to a bitstream
     static Bitstream serialise_chip(const Chip &chip, const std::map<std::string, std::string> options);
