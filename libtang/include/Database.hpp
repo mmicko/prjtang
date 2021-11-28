@@ -32,8 +32,11 @@ inline bool operator==(const TileLocator &a, const TileLocator &b) {
     return (a.family == b.family) && (a.device == b.device) && (a.tiletype == b.tiletype);
 }
 
-// Search the device list by part name
+// Search the device list by device name
 DeviceLocator find_device_by_name(string name);
+
+// Search the device list by part name
+DeviceLocator find_device_by_part(string part);
 
 // Search the device list by ID
 DeviceLocator find_device_by_idcode(uint32_t idcode);

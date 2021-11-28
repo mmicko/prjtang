@@ -81,13 +81,14 @@ public:
     }
 };
 
-// The BitstreamReadWriter class stores state (including CRC16) whilst reading
-// the bitstream
-class BitstreamReadWriter {
-public:
-    BitstreamReadWriter() : data(), iter(data.begin()) {};
 
-    BitstreamReadWriter(const vector<uint8_t> &data) : data(data), iter(this->data.begin()) {};
+// The BlockReadWriter class stores state (including CRC16) whilst reading
+// the bitstream
+class BlockReadWriter {
+public:
+    BlockReadWriter() : data(), iter(data.begin()) {};
+
+    BlockReadWriter(const vector<uint8_t> &data) : data(data), iter(this->data.begin()) {};
 
     vector<uint8_t> data;
     vector<uint8_t>::iterator iter;
@@ -97,16 +98,15 @@ public:
     inline uint8_t get_byte() {
         assert(iter < data.end());
         uint8_t val = *(iter++);
-        //cerr << hex << setw(2) << int(val) << endl;
         crc16.update_crc16(val);
         return val;
     }
 
-    inline uint16_t get_block_size() {
-        uint16_t len = get_uint16();
-        if ((len & 7) != 0)
-            throw BitstreamParseError("Invalid size value in bitstream");
-        return len >> 3;
+    // Read a big endian uint16 from the bitstream and update CRC
+    uint16_t get_uint16() {
+        uint8_t tmp[2];
+        get_bytes(tmp, 2);
+        return (tmp[0] << 8UL) | (tmp[1]);
     }
 
     // The command opcode is a byte so this works like get_byte
@@ -133,27 +133,9 @@ public:
         }
     }
 
-    // Decode a onehot byte, -1 if not onehot
-    int decode_onehot(uint8_t in) {
-        switch(in) {
-            case 0b00000001:
-                return 0;
-            case 0b00000010:
-                return 1;
-            case 0b00000100:
-                return 2;
-            case 0b00001000:
-                return 3;
-            case 0b00010000:
-                return 4;
-            case 0b00100000:
-                return 5;
-            case 0b01000000:
-                return 6;
-            case 0b10000000:
-                return 7;
-            default:
-                return -1;
+    void get_vector(std::vector<uint8_t> &out, size_t count) {
+        for (size_t i = 0; i < count; i++) {
+            out.push_back(get_byte());
         }
     }
 
@@ -180,12 +162,6 @@ public:
             data.push_back(0xFF);
     }
 
-    // Read a big endian uint16 from the bitstream
-    uint16_t get_uint16() {
-        uint8_t tmp[2];
-        get_bytes(tmp, 2);
-        return (tmp[0] << 8UL) | (tmp[1]);
-    }
 
     // Read a big endian uint32 from the bitstream
     uint32_t get_uint32() {
@@ -194,6 +170,11 @@ public:
         return (tmp[0] << 24UL) | (tmp[1] << 16UL) | (tmp[2] << 8UL) | (tmp[3]);
     }
 
+    // Write a big endian uint16_t into the bitstream
+    void write_uint16(uint16_t val) {
+        write_byte(uint8_t((val >> 8UL) & 0xFF));
+        write_byte(uint8_t(val & 0xFF));
+    }
     // Write a big endian uint32_t into the bitstream
     void write_uint32(uint32_t val) {
         write_byte(uint8_t((val >> 24UL) & 0xFF));
@@ -249,6 +230,122 @@ public:
     };
 };
 
+class BitstreamReadWriter {
+public:
+    BitstreamReadWriter() : data(), iter(data.begin()) {};
+
+    BitstreamReadWriter(const vector<uint8_t> &data) : data(data), iter(this->data.begin()) {};
+
+    void read_block() {
+        std::vector<uint8_t> block;
+        uint16_t block_size = get_block_size();
+        get_vector(block, block_size);
+        blocks.push_back(block);
+    }
+
+    void write_block(std::vector<uint8_t> block) {
+        write_uint16(block.size()<<3);
+        for (size_t i = 0; i < block.size(); i++)
+            write_byte(block[i]);
+        blocks.push_back(block);
+    }
+
+    // Get the offset into the bitstream
+    size_t get_offset() {
+        return size_t(distance(data.begin(), iter));
+    }
+
+    bool is_end() {
+        return (iter >= data.end());
+    }
+
+    const std::vector<std::vector<uint8_t>> &get_blocks() {
+        return blocks;
+    };
+
+    const vector<uint8_t> &get() {
+        return data;
+    };
+
+    // Insert dummy bytes into the bitstream
+    void insert_dummy_block(uint8_t val, uint16_t count) {
+        BlockReadWriter blk;
+        for (size_t i = 0; i < count; i++)
+            blk.write_byte(val);
+        write_block(blk.get());
+    }
+
+    void insert_cmd_uint32(BitstreamCommand cmd, uint32_t val) {
+        BlockReadWriter blk;
+        blk.write_byte((uint8_t)cmd);
+        blk.write_byte(0x00);
+        blk.write_uint16(6);
+        blk.write_uint32(val);
+        blk.insert_crc16();
+        write_block(blk.get());
+    }
+private:
+
+    vector<uint8_t> data;
+    std::vector<std::vector<uint8_t>> blocks;
+
+    vector<uint8_t>::iterator iter;
+
+    // Return a single byte
+    inline uint8_t get_byte() {
+        assert(iter < data.end());
+        return *(iter++);
+    }
+
+    // Read a big endian uint16 from the bitstream
+    uint16_t get_uint16() {
+        uint8_t tmp[2];
+        get_bytes(tmp, 2);
+        return (tmp[0] << 8UL) | (tmp[1]);
+    }
+
+    inline uint16_t get_block_size() {
+        uint16_t len = get_uint16();
+        if ((len & 7) != 0)
+            throw BitstreamParseError("Invalid size value in bitstream", get_offset());
+        return len >> 3;
+    }
+
+    // Copy multiple bytes into an OutputIterator
+    template<typename T>
+    void get_bytes(T out, size_t count) {
+        for (size_t i = 0; i < count; i++) {
+            *out = get_byte();
+            ++out;
+        }
+    }
+
+    // Read multiple bytes into vector
+    void get_vector(std::vector<uint8_t> &out, size_t count) {
+        for (size_t i = 0; i < count; i++) {
+            out.push_back(get_byte());
+        }
+    }
+
+    // Write a single byte
+    inline void write_byte(uint8_t b) {
+        data.push_back(b);
+    }
+
+    void write_uint16(uint16_t val) {
+        write_byte(uint8_t((val >> 8) & 0xFF));
+        write_byte(uint8_t((val) & 0xFF));
+    }
+
+    // Write multiple bytes from an InputIterator
+    template<typename T>
+    void write_bytes(T in, size_t count) {
+        for (size_t i = 0; i < count; i++)
+            write_byte(*(in++));
+    }
+
+};
+
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
         : data(data), metadata(metadata)
 {
@@ -295,19 +392,23 @@ static const vector<uint8_t> preamble = {0xCC, 0x55, 0xAA, 0x33};
 Chip Bitstream::deserialise_chip()
 {
     BitstreamReadWriter rd(data);
+    while (!rd.is_end()) {
+        rd.read_block();
+    }
+    blocks = rd.get_blocks();
     boost::optional<Chip> chip;
 
     Crc16 data_crc16;
-
-    bool found_preamble = rd.find_preamble(preamble);
-
-    if (!found_preamble)
-        throw BitstreamParseError("preamble not found in bitstream");
-
     bool is_cpld = false;
-    while (!rd.is_end()) {
-        uint16_t block_size = rd.get_block_size();
-        rd.crc16.reset_crc16();
+
+    bool found_preamble = false;
+    for(auto it = blocks.begin(); it != blocks.end(); ++it) {
+        BlockReadWriter rd(*it);
+        if (!found_preamble) {
+            found_preamble = rd.find_preamble(preamble);
+            continue;
+        }
+
         BitstreamCommand cmd = rd.get_command_opcode();
 
         bool is_cpld_command = false;
@@ -315,9 +416,7 @@ Chip Bitstream::deserialise_chip()
             case BitstreamCommand::DUMMY_FF:
             case BitstreamCommand::DUMMY_EE:
             case BitstreamCommand::DUMMY_00:
-                // first byte is read as cmd
-                BITSTREAM_NOTE("padding block_size " << dec << block_size);
-                rd.skip_bytes(block_size-1);
+                BITSTREAM_NOTE("padding block_size " << dec << it->size());
                 continue;
                 break;
 
@@ -342,7 +441,7 @@ Chip Bitstream::deserialise_chip()
             uint8_t flag = rd.get_byte();
             if (!flag) {
                 cmd_size = rd.get_uint16();
-                if (!is_cpld_command && (block_size - 4) != cmd_size)
+                if (!is_cpld_command && (it->size() - 4) != cmd_size)
                     throw BitstreamParseError("error parsing command");
             }
         }
@@ -431,7 +530,8 @@ Chip Bitstream::deserialise_chip()
                 // taking current CRC16
                 data_crc16.crc16 = rd.crc16.crc16;
                 for (int idx = 0; idx < frames; idx++) {
-                    block_size = rd.get_block_size();
+                    it++;
+                    BlockReadWriter rd(*it);
                     rd.get_bytes(frame_bytes.get(), bytes_per_frame);
                     // Update CRC16 for complete frame
                     for (size_t i = 0; i < bytes_per_frame; i++) {
@@ -452,9 +552,8 @@ Chip Bitstream::deserialise_chip()
                     }
                     data_crc16.reset_crc16();    
                 }
-                // zero block
-                block_size = rd.get_block_size();
-                rd.skip_bytes(block_size);
+                // zero block, just skip
+                it++;
                 break;
             }
             case BitstreamCommand::MEMORY_DATA: {
@@ -502,7 +601,7 @@ Chip Bitstream::deserialise_chip()
             case BitstreamCommand::CMD_A3:
             case BitstreamCommand::CMD_AC:
             case BitstreamCommand::CMD_B1:
-                rd.skip_bytes(block_size-3-3);
+                rd.skip_bytes(it->size()-3-3);
                 break;
             case BitstreamCommand::CPLD_DATA: {
                 uint16_t frames = cmd_size;
@@ -511,7 +610,8 @@ Chip Bitstream::deserialise_chip()
                 // taking current CRC16
                 data_crc16.crc16 = rd.crc16.crc16;
                 for (int idx = 0; idx < frames; idx++) {
-                    block_size = rd.get_block_size();
+                    it++;
+                    BlockReadWriter rd(*it);
                     rd.get_bytes(frame_bytes.get(), bytes_per_frame);
                     // Update CRC16 for complete frame
                     for (size_t i = 0; i < bytes_per_frame; i++) {
@@ -543,6 +643,9 @@ Chip Bitstream::deserialise_chip()
         }
     }
 
+    if (!found_preamble)
+        throw BitstreamParseError("preamble not found in bitstream");
+
     if (chip) {
         return *chip;
     } else {
@@ -560,13 +663,21 @@ void Bitstream::write_bit(std::ostream &out)
     out.write(reinterpret_cast<const char *>(&(data[0])), data.size());
 }
 
-Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string> options) {
+Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>) {
     BitstreamReadWriter wr;
-
-    //BitstreamOptions ops(chip);
-
+    wr.insert_dummy_block(0xff, 16);
+    wr.insert_dummy_block(0xff, 16);
     // Preamble
-    wr.write_bytes(preamble.begin(), preamble.size());
+    {
+        BlockReadWriter blk;
+        blk.write_bytes(preamble.begin(), preamble.size());
+        wr.write_block(blk.get());
+    }
+
+    wr.insert_cmd_uint32(BitstreamCommand::DEVICEID, 0x10006c31);
+    wr.insert_cmd_uint32(BitstreamCommand::CFG_1, chip.cfg1);
+    wr.insert_cmd_uint32(BitstreamCommand::CFG_2, chip.cfg2);
+    //wr.insert_cmd_uint32(BitstreamCommand::FRAMES, chip.info.);
 
     return Bitstream(wr.get(), chip.metadata);
 }

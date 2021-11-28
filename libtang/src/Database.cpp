@@ -53,6 +53,19 @@ DeviceLocator find_device_by_name(string name) {
     return *found;
 }
 
+DeviceLocator find_device_by_part(string part) {
+    auto found = find_device_generic([part](const string &n, const pt::ptree &p) -> bool {
+        UNUSED(p);
+        for (const pt::ptree::value_type &package : p.get_child("packages")) {
+            if (package.second.get<string>("part") == part) return true;
+        }
+        return false;
+    });
+    if (!found)
+        throw runtime_error("no device in database with part name " + part);
+    return *found;
+}
+
 // Hex is not allowed in JSON, to avoid an ugly decimal integer use a string instead
 // But we need to parse this back to a uint32_t
 uint32_t parse_uint32(string str) {
@@ -64,7 +77,7 @@ DeviceLocator find_device_by_idcode(uint32_t idcode) {
         UNUSED(n);
         for (const pt::ptree::value_type &package : p.get_child("packages")) {
             if (parse_uint32(package.second.get<string>("idcode")) == idcode) return true;
-        }        
+        }
         return false;
     });
     if (!found)
