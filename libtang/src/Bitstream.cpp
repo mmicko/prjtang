@@ -358,6 +358,11 @@ private:
 Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata)
         : data(data), metadata(metadata)
 {
+    BitstreamReadWriter rd(data);
+    while (!rd.is_end()) {
+        rd.read_block();
+    }
+    blocks = rd.get_blocks();
 }
 
 Bitstream Bitstream::read(std::istream &in)
@@ -400,11 +405,6 @@ static const vector<uint8_t> preamble = {0xCC, 0x55, 0xAA, 0x33};
 
 Chip Bitstream::deserialise_chip()
 {
-    BitstreamReadWriter rd(data);
-    while (!rd.is_end()) {
-        rd.read_block();
-    }
-    blocks = rd.get_blocks();
     boost::optional<Chip> chip;
 
     Crc16 data_crc16;
@@ -691,7 +691,34 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
     wr.insert_cmd_uint32(BitstreamCommand::VERSION_UCODE, chip.usercode);
     wr.insert_cmd_uint32(BitstreamCommand::CMD_C4, chip.cfg_c4);
     wr.insert_cmd_uint16(BitstreamCommand::RESET_CRC, 0x0000);
-
+    uint16_t crc16 = CRC16_INIT;
+    {
+        BlockReadWriter blk;
+        blk.crc16.reset_crc16();
+        blk.write_byte((uint8_t)BitstreamCommand::FUSE_DATA);
+        blk.write_byte(0xf0);
+        blk.write_uint16(chip.info.num_frames);
+        crc16 = blk.crc16.crc16;
+        wr.write_block(blk.get());
+    }
+    for (int idx = 0; idx < chip.cram.frames(); idx++) {
+        BlockReadWriter blk;
+        blk.crc16.crc16 = crc16;
+        for (int pos = 0; pos < chip.cram.bits()/8; pos++) {
+            uint8_t byte = 0x00;
+            for (int i = 0; i < 8; i++)
+                byte = (byte << 1) + (chip.cram.get_bit(idx, pos*8+i) ? 1 : 0);
+            blk.write_byte(byte);
+        }
+        blk.insert_crc16();
+        blk.write_uint32(0);
+        wr.write_block(blk.get());
+        crc16 = CRC16_INIT;
+    }
+    wr.insert_dummy_block(0x00, 15);
+    wr.insert_cmd_uint16(BitstreamCommand::PROGRAM_DONE, 0x0000);
+    wr.insert_dummy_block(0xff, 16);
+    wr.insert_dummy_block(0xff, 16);
     return Bitstream(wr.get(), chip.metadata);
 }
 
