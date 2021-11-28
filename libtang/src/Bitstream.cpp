@@ -104,8 +104,8 @@ public:
 
     inline uint16_t get_block_size() {
         uint16_t len = get_uint16();
-        //if ((len & 7) != 0)
-        //    throw BitstreamParseError("Invalid size value in bitstream");
+        if ((len & 7) != 0)
+            throw BitstreamParseError("Invalid size value in bitstream");
         return len >> 3;
     }
 
