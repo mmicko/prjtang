@@ -32,7 +32,8 @@ def extract_elements(bitfile, infile):
 				t = unlogic.inst[prefix]
 				b = unlogic.bcc_info[t["type"]]
 				bit = b[line]
-				if t["flag"]==0:
+				#if t["flag"]==0:
+				if bit["type"]!="NONE":
 					t = unlogic.info[t["y"]+bit["yoff"]][t["x"]+bit["xoff"]][bit["type"].lower()]
 				row = t["wl_beg"]+bit["y"]
 				col = t["bl_beg"]+bit["x"]
@@ -42,10 +43,11 @@ def extract_elements(bitfile, infile):
 					col += 6
 				status = "FAILED"
 				if (str(row) in bits and str(col) in bits[str(row)]):
-					bits[str(row)].pop(str(col))
+					#bits[str(row)].pop(str(col))
 					status = "OK"
 					
-				print("{}/{},{} flag:{} row:{} col:{} {}".format(prefix,line,t["type"],t["flag"],row, col, status))
+				if status == "FAILED":
+					print("{}/{},{} flag:{} row:{} col:{} {}".format(prefix,line,t["type"],t["flag"],row, col, status))
 
 	
 def main(argv):

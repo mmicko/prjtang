@@ -4,7 +4,9 @@ import os
 import json
 
 decrypt = None
+inst = dict() 
 bcc_info = dict()
+info = []
 def print_decrypt(val):
 	global decrypt
 	if (decrypt):
@@ -380,31 +382,35 @@ def decode_chipdb(argv):
 		# bitstream cell type info
 		blocks,out  = decode(fp, [0])
 		print_decrypt(out)
+		mapping = { 0 : 'FALSE', 1:'TRUE', 2:'?', 3:'(', 4 : ')', 5 : '+', 6:'?', 7:'*', 8:'~', 9:'?'}
 		assert blocks[0]=="bcc_info"
 		for i in range(int(blocks[1])):
 			unk,out  = decode(fp, [0])
 			print_decrypt(out)
 			global bcc_info
 			bcc_name = unk[0]
-			with open(os.path.join(file_paths["datadir"],unk[0]), "wt") as f:
-				print_decrypt_tofile(f, out)
+			with open(os.path.join(file_paths["datadir"],unk[0]+".json"), "wt") as f:
+				#print_decrypt_tofile(f, out)
 				k = int(unk[3])
 				bits = dict()
 				for j in range(k):
 					unk,out  = decode(fp, [0,1])
 					print_decrypt(out)
-					print_decrypt_tofile(f, out)
+					#print_decrypt_tofile(f, out)
 					current_item = {
 						"type": unk[1],
 						"y": int(unk[2]),
 						"x": int(unk[3]),
 						"xoff": int(unk[4]),
 						"yoff": int(unk[5]),
-						"unk5": int(unk[6]),
-						"unk6": int(unk[7]),
-						"unk7": int(unk[8]),
-						"cnt": int(unk[9])
+						"flag1": int(unk[6]),
+						"flag2": int(unk[7]),
+						"flag3": int(unk[8]),
+						"cnt": int(unk[11])
 					}
+					assert(int(unk[6])==0 or int(unk[6])==1)
+					assert(int(unk[7])==0 or int(unk[7])==1)
+					assert(int(unk[8])==0 or int(unk[8])==1)
 					bits[unk[0]] = current_item
 					n1 = int(unk[9])
 					n2 = int(unk[10])
@@ -412,27 +418,38 @@ def decode_chipdb(argv):
 					
 					for l in range(n1):
 						unk,out  = decode(fp, [])
-						print_decrypt(out)
-						print_decrypt_tofile(f, out)
+						if(int(unk[0])>=10):
+							print_decrypt(chr(55+int(unk[0])))
+							#print_decrypt_tofile(f, chr(55+int(unk[0])))
+						else:
+							print_decrypt(mapping[int(unk[0])])
+							#print_decrypt_tofile(f,mapping[int(unk[0])])
 					empty,out  = decode(fp, [])
 					print_decrypt(out)
 					assert len(empty)==0
 					for l in range(n2):
 						unk,out  = decode(fp, [])
-						print_decrypt(out)
-						print_decrypt_tofile(f, out)
+						if(int(unk[0])>=10):
+							print_decrypt(chr(55+int(unk[0])))
+							#print_decrypt_tofile(f, chr(55+int(unk[0])))
+						else:
+							print_decrypt(mapping[int(unk[0])])
+							#print_decrypt_tofile(f,mapping[int(unk[0])])
 					empty,out  = decode(fp, [])
 					print_decrypt(out)
 					assert len(empty)==0
 
 					for l in range(n3):
 						unk,out  = decode(fp, [1])
-						print_decrypt(out)
-						print_decrypt_tofile(f, out)
+						print_decrypt(chr(55+int(unk[0]))+" "+ unk[1])
+						#print_decrypt_tofile(f, chr(55+int(unk[0]))+ " " + unk[1])
 					empty,out  = decode(fp, [])
 					print_decrypt(out)
 					assert len(empty)==0
-					
+				
+				json.dump(bits, f, indent=4)
+
+
 			bcc_info[bcc_name] = bits
 			empty,out  = decode(fp, [])
 			print_decrypt(out)
@@ -448,10 +465,18 @@ def decode_chipdb(argv):
 		
 		max_col = int(blocks[1])
 		max_row = int(blocks[2])
-
+		for i in range(max_row ):
+			row = []
+			for j in range(max_col):
+				row.append([])
+			row2 = []
+			for j in range(max_col):
+				row2.append([])
+			info.append(row2)
 		bl = int(blocks[8])
 		bl2 = int(blocks[7])
-		total_num = 0		
+		total_num = 0
+		global inst		
 		for i in range(max_row*max_col):
 			unk,out  = decode(fp, [])
 			print_decrypt(out)
@@ -459,6 +484,7 @@ def decode_chipdb(argv):
 			y = int(unk[1])
 			num = int(unk[2])
 			total_num += num
+			info[y][x] = dict()
 			for j in range(num):
 				unk,out  = decode(fp, [0,1])
 				print_decrypt(out)
@@ -476,7 +502,9 @@ def decode_chipdb(argv):
 					"bl_beg": int(unk[7]),
 					"flag": int(unk[8])
 				}
-				
+				if (int(unk[8])==-1):
+					info[y][x][unk[1]] = current_item
+				inst[unk[0]] = current_item
 				tiles[unk[0]] = current_item
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
