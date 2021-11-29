@@ -127,8 +127,11 @@ vector<TileInfo> get_device_tilegrid(const DeviceLocator &part) {
             ti.row = size_t(tile.second.get<int>("y"));
             ti.num_frames = size_t(tile.second.get<int>("w"));
             ti.bits_per_frame = size_t(tile.second.get<int>("h"));
-            ti.bit_offset = size_t(tile.second.get<int>("wl_beg"));
-            ti.frame_offset = size_t(tile.second.get<int>("bl_beg"));
+            ti.bit_offset = size_t(tile.second.get<int>("bl_beg"));
+            // For eagle_s20 only
+            if (ti.bit_offset >=974) ti.bit_offset += 6;
+			if (ti.bit_offset >=2920+6) ti.bit_offset += 6;
+            ti.frame_offset = size_t(tile.second.get<int>("wl_beg"));
             ti.type = tile.second.get<string>("type");
             ti.flag = size_t(tile.second.get<int>("flag"));
             tilesInfo.push_back(ti);
