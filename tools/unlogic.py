@@ -278,6 +278,7 @@ def decode_chipdb(argv):
 				unk,out  = decode(fp, [0])
 				print_decrypt(out)
 
+		# types ???
 		blocks,out  = decode(fp, [])
 		print_decrypt(out)
 		for i in range(int(blocks[0])):
@@ -502,6 +503,11 @@ def decode_chipdb(argv):
 					"bl_beg": int(unk[7]),
 					"flag": int(unk[8])
 				}
+				if (int(unk[8])==0):
+					assert(int(unk[4])==0)
+					assert(int(unk[5])==0)
+					assert(int(unk[6])==0)
+					assert(int(unk[7])==0)
 				if (int(unk[8])==-1):
 					info[y][x][unk[1]] = current_item
 				inst[unk[0]] = current_item
