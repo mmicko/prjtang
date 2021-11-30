@@ -278,7 +278,7 @@ def decode_chipdb(argv):
 				unk,out  = decode(fp, [0])
 				print_decrypt(out)
 
-		# types ???
+		# models
 		blocks,out  = decode(fp, [])
 		print_decrypt(out)
 		for i in range(int(blocks[0])):
@@ -393,12 +393,13 @@ def decode_chipdb(argv):
 			with open(os.path.join(file_paths["datadir"],unk[0]+".json"), "wt") as f:
 				#print_decrypt_tofile(f, out)
 				k = int(unk[3])
-				bits = dict()
+				bits = []
 				for j in range(k):
 					unk,out  = decode(fp, [0,1])
 					print_decrypt(out)
 					#print_decrypt_tofile(f, out)
 					current_item = {
+						"name": unk[0],
 						"type": unk[1],
 						"y": int(unk[2]),
 						"x": int(unk[3]),
@@ -412,7 +413,7 @@ def decode_chipdb(argv):
 					assert(int(unk[6])==0 or int(unk[6])==1)
 					assert(int(unk[7])==0 or int(unk[7])==1)
 					assert(int(unk[8])==0 or int(unk[8])==1)
-					bits[unk[0]] = current_item
+					bits.append(current_item)
 					n1 = int(unk[9])
 					n2 = int(unk[10])
 					n3 = int(unk[11])
@@ -496,13 +497,40 @@ def decode_chipdb(argv):
 					"type": unk[1],
 					"x": int(unk[2]),
 					"y": int(unk[3]),
-					"z": j,
 					"w": int(unk[4]),
 					"h": int(unk[5]),
 					"wl_beg": int(unk[6]),
 					"bl_beg": int(unk[7]),
-					"flag": int(unk[8])
+					"flag": int(unk[8]),
+					"sites": []
 				}
+				sites = []
+				if (unk[1]=="plb"):
+					sites.append({"name": "slice0", "type": "mslice"})
+					sites.append({"name": "slice1", "type": "mslice"})
+					sites.append({"name": "slice2", "type": "lslice"})
+					sites.append({"name": "slice3", "type": "lslice"})
+				if (unk[1].startswith("iol_pair")):
+					sites.append({"name": "pad0", "type": "iol"})
+					sites.append({"name": "pad1", "type": "iol"})
+				if (unk[1].startswith("iol_quad")):
+					sites.append({"name": "pad0", "type": "iol"})
+					sites.append({"name": "pad1", "type": "iol"})
+					sites.append({"name": "pad2", "type": "iol"})
+					sites.append({"name": "pad3", "type": "iol"})
+				if (unk[1] == "emb_slice"):
+					sites.append({"name": "emb0", "type": "emb"})
+					sites.append({"name": "emb1", "type": "emb"})
+					sites.append({"name": "emb2", "type": "emb"})
+					sites.append({"name": "emb3", "type": "emb"})
+				if (unk[1] == "emb32k"):
+					sites.append({"name": "emb32k0", "type": "emb32k"})
+					sites.append({"name": "emb32k1", "type": "emb32k"})
+				if (unk[1]=="config"):
+					sites.append({"name": "config", "type": "config"})
+				if (unk[1].startswith("pll") and unk[1]!="pll_matrix"):
+					sites.append({"name": "pll", "type": "pll"})
+				current_item["sites"] = sites
 				if (int(unk[8])==0):
 					assert(int(unk[4])==0)
 					assert(int(unk[5])==0)
