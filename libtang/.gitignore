@@ -9,6 +9,7 @@ CTestTestfile.cmake
 CMakeCache.txt
 *.bit
 *.bin
+*.config
 *.dump
 *.so
 *.dll
@@ -17,12 +18,14 @@ CMakeCache.txt
 install_manifest.txt
 tangbit
 tangunpack
+tangpack
 *~
 generated/
 
 # Windows
 tangbit.exe
 tangunpack.exe
+tangpack.exe
 
 # Ninja
 .ninja_*
