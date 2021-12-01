@@ -788,7 +788,7 @@ void Bitstream::write_svf(const Chip &chip, std::ostream &out) {
     // Loading device with 'idcode' instruction.
     out << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
     out << "RUNTEST 15 TCK;" << std::endl;
-    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << chip.idcode
+    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << chip.info.idcode
         << ") MASK (ffffffff) ;" << std::endl;
     // Boundary Scan Chain Contents
     // Position 1: BG256
@@ -806,7 +806,7 @@ void Bitstream::write_svf(const Chip &chip, std::ostream &out) {
     out << "TDR 0 ;" << std::endl;
     // Loading device with 'idcode' instruction.
     out << "SIR 8 TDI (06) SMASK (ff) ;" << std::endl;
-    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << chip.idcode
+    out << "SDR 32 TDI (00000000) SMASK (ffffffff) TDO (" << std::setw(8) << std::hex << std::setfill('0') << chip.info.idcode
          << ") MASK (ffffffff) ;" << std::endl;
     // Loading device with 'refresh' instruction.
     out << "SIR 8 TDI (01) SMASK (ff) ;" << std::endl;
@@ -874,13 +874,15 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
         wr.write_block(blk.get());
     }
 
-    wr.insert_cmd_uint32(BitstreamCommand::DEVICEID, chip.idcode);
+    wr.insert_cmd_uint32(BitstreamCommand::DEVICEID, chip.info.idcode);
     wr.insert_cmd_uint32(BitstreamCommand::CFG_1, chip.cfg1);
     wr.insert_cmd_uint32(BitstreamCommand::CFG_2, chip.cfg2);
     wr.insert_cmd_uint32(BitstreamCommand::FRAMES, (chip.info.num_frames << 16) + (chip.info.bits_per_frame >> 3));
     wr.insert_cmd_uint32(BitstreamCommand::MEM_FRAME, chip.info.bram_bits_per_frame >> 3);
     wr.insert_cmd_uint32(BitstreamCommand::VERSION_UCODE, chip.usercode);
+    wr.insert_cmd_uint32(BitstreamCommand::CMD_CA, chip.cfg_ca);
     wr.insert_cmd_uint32(BitstreamCommand::CMD_C4, chip.cfg_c4);
+    wr.insert_cmd_uint16(BitstreamCommand::CMD_F5, 0x0000);
     wr.insert_cmd_uint16(BitstreamCommand::RESET_CRC, 0x0000);
     uint16_t crc16 = CRC16_INIT;
     {
@@ -910,6 +912,10 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
     wr.insert_cmd_uint16(BitstreamCommand::PROGRAM_DONE, 0x0000);
     wr.insert_dummy_block(0xff, 16);
     wr.insert_dummy_block(0xff, 16);
+    wr.insert_dummy_block(0x00, 1162);
+    wr.insert_dummy_block(0x00, 1162);
+    wr.insert_dummy_block(0x00, 1162);
+    wr.insert_dummy_block(0x00, 1162);
     return Bitstream(wr.get(), chip.metadata);
 }
 

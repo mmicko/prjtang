@@ -68,12 +68,6 @@ DeviceLocator find_device_by_part(string part) {
     return *found;
 }
 
-// Hex is not allowed in JSON, to avoid an ugly decimal integer use a string instead
-// But we need to parse this back to a uint32_t
-uint32_t parse_uint32(string str) {
-    return uint32_t(strtoul(str.c_str(), nullptr, 0));
-}
-
 DeviceLocator find_device_by_idcode(uint32_t idcode) {
     auto found = find_device_generic([idcode](const string &n, const pt::ptree &p, const string &pk) -> bool {
         UNUSED(n);
@@ -90,10 +84,12 @@ DeviceLocator find_device_by_idcode(uint32_t idcode) {
 ChipInfo get_chip_info(const DeviceLocator &part) {
     pt::ptree dev = devices_info.get_child("families").get_child(part.family).get_child("devices").get_child(
             part.device);
+    pt::ptree pkg = dev.get_child("packages").get_child(part.package);
     ChipInfo ci;
     ci.family = part.family;
     ci.name = part.device;
     ci.package = part.package;
+    ci.idcode = parse_uint32(pkg.get<string>("idcode"));
     ci.num_frames = dev.get<int>("frames");
     ci.bits_per_frame = dev.get<int>("bits_per_frame");
     ci.bram_bits_per_frame = dev.get<int>("bram_bits_per_frame");

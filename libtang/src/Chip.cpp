@@ -13,9 +13,7 @@ Chip::Chip(string name, string package) : Chip(get_chip_info(find_device_by_name
 {}
 
 Chip::Chip(uint32_t idcode) : Chip(get_chip_info(find_device_by_idcode(idcode)))
-{
-    this->idcode = idcode;
-}
+{}
 
 Chip::Chip(const Tang::ChipInfo &info) : info(info), cram(info.num_frames, info.bits_per_frame)
 {

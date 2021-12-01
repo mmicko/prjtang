@@ -18,6 +18,7 @@ struct ChipInfo
     string name;
     string family;
     string package;
+    uint32_t idcode;
     uint16_t num_frames;
     uint32_t bits_per_frame;
     uint32_t bram_bits_per_frame;
@@ -68,13 +69,12 @@ public:
 
     // Miscellaneous information
     uint32_t usercode = 0x00000000;
-    uint32_t cfg1;
-    uint32_t cfg2;
-    uint32_t cfg_c4;
-    uint32_t cfg_c5;
-    uint32_t cfg_ca;
+    uint32_t cfg1 = 0x00000000; // TODO
+    uint32_t cfg2 = 0x00000000; // TODO
+    uint32_t cfg_c4 = 0x00000000; // TODO
+    uint32_t cfg_c5 = 0x00000000; // TODO
+    uint32_t cfg_ca = 0x00000000; // TODO
     vector<string> metadata;
-    uint32_t idcode;
 
     vector<vector<vector<pair<string, string>>>> tiles_at_location;
     // Block RAM initialisation

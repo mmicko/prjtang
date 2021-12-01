@@ -111,6 +111,17 @@ Chip ChipConfig::to_chip() const
     Chip c(chip_name, chip_package);
     c.metadata = metadata;
     c.bram_data = bram_data;
+
+    if (sysconfig.count("cfg1")) 
+        c.cfg1 = parse_uint32(sysconfig.at("cfg1"));
+    if (sysconfig.count("cfg2")) 
+        c.cfg2 = parse_uint32(sysconfig.at("cfg2"));
+    if (sysconfig.count("cfg_c4")) 
+        c.cfg_c4 = parse_uint32(sysconfig.at("cfg_c4"));
+    if (sysconfig.count("cfg_c5")) 
+        c.cfg_c5 = parse_uint32(sysconfig.at("cfg_c5"));
+    if (sysconfig.count("cfg_ca")) 
+        c.cfg_ca = parse_uint32(sysconfig.at("cfg_ca"));
 /*    set<string> processed_tiles;
     for (auto tile_entry : c.tiles) {
         auto tile_db = get_tile_bitdata(TileLocator{c.info.family, c.info.name, tile_entry.second->info.type});
@@ -153,6 +164,11 @@ ChipConfig ChipConfig::from_chip(const Chip &chip)
     cc.chip_package = chip.info.package;
     cc.metadata = chip.metadata;
     cc.bram_data = chip.bram_data;
+    cc.sysconfig["cfg1"] = uint32_to_hexstr(chip.cfg1);
+    cc.sysconfig["cfg2"] = uint32_to_hexstr(chip.cfg2);
+    cc.sysconfig["cfg_c4"] = uint32_to_hexstr(chip.cfg_c4);
+    cc.sysconfig["cfg_c5"] = uint32_to_hexstr(chip.cfg_c5);
+    cc.sysconfig["cfg_ca"] = uint32_to_hexstr(chip.cfg_ca);    
 /*    for (auto tile : chip.tiles) {
         bool active = false;
         //printf("tile : %s\n",tile.first.c_str());

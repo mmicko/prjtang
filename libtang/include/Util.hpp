@@ -24,6 +24,12 @@ inline string uint32_to_hexstr(uint32_t val) {
     return os.str();
 }
 
+// Hex is not allowed in JSON, to avoid an ugly decimal integer use a string instead
+// But we need to parse this back to a uint32_t
+inline uint32_t parse_uint32(string str) {
+    return uint32_t(strtoul(str.c_str(), nullptr, 0));
+}
+
 inline string to_string(const vector<bool> &bv) {
     ostringstream os;
     for (auto bit : boost::adaptors::reverse(bv))
