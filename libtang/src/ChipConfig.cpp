@@ -59,7 +59,7 @@ ChipConfig ChipConfig::from_string(const string &config)
         ss >> verb;
         if (verb == ".device") {
             ss >> cc.chip_name;
-        } if (verb == ".package") {
+        } else if (verb == ".package") {
             ss >> cc.chip_package;
         } else if (verb == ".comment") {
             std::string line;
