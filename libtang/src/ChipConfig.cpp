@@ -12,6 +12,7 @@ string ChipConfig::to_string() const
 {
     stringstream ss;
     ss << ".device " << chip_name << endl << endl;
+    ss << ".package " << chip_package << endl << endl;
     for (const auto &meta : metadata)
         ss << ".comment " << meta << endl;
     for (const auto &sc : sysconfig)
@@ -58,6 +59,8 @@ ChipConfig ChipConfig::from_string(const string &config)
         ss >> verb;
         if (verb == ".device") {
             ss >> cc.chip_name;
+        } if (verb == ".package") {
+            ss >> cc.chip_package;
         } else if (verb == ".comment") {
             std::string line;
             ss.get(); //skip space
@@ -105,7 +108,7 @@ ChipConfig ChipConfig::from_string(const string &config)
 
 Chip ChipConfig::to_chip() const
 {
-    Chip c(chip_name);
+    Chip c(chip_name, chip_package);
     c.metadata = metadata;
     c.bram_data = bram_data;
 /*    set<string> processed_tiles;
@@ -147,11 +150,22 @@ ChipConfig ChipConfig::from_chip(const Chip &chip)
 {
     ChipConfig cc;
     cc.chip_name = chip.info.name;
+    cc.chip_package = chip.info.package;
     cc.metadata = chip.metadata;
     cc.bram_data = chip.bram_data;
 /*    for (auto tile : chip.tiles) {
-        auto tile_db = get_tile_bitdata(TileLocator{chip.info.family, chip.info.name, tile.second->info.type});
-        cc.tiles[tile.first] = tile_db->tile_cram_to_config(tile.second->cram);
+        bool active = false;
+        //printf("tile : %s\n",tile.first.c_str());
+        for(int i = 0;i<tile.second->cram.frames();i++){
+            for(int j = 0;j<tile.second->cram.bits();j++){
+                active |= tile.second->cram.get_bit(i,j);
+            }
+        }
+        if (active) {
+            printf("tile : %s %d\n",tile.first.c_str(),tile.second->info.flag);
+        }
+        //auto tile_db = get_tile_bitdata(TileLocator{chip.info.family, chip.info.name, tile.second->info.type});
+        //cc.tiles[tile.first] = tile_db->tile_cram_to_config(tile.second->cram);
     }*/
     return cc;
 }

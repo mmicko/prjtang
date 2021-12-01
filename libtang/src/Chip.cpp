@@ -9,7 +9,7 @@ using namespace std;
 
 namespace Tang {
 
-Chip::Chip(string name) : Chip(get_chip_info(find_device_by_name(name)))
+Chip::Chip(string name, string package) : Chip(get_chip_info(find_device_by_name(name, package)))
 {}
 
 Chip::Chip(uint32_t idcode) : Chip(get_chip_info(find_device_by_idcode(idcode)))
@@ -19,7 +19,7 @@ Chip::Chip(uint32_t idcode) : Chip(get_chip_info(find_device_by_idcode(idcode)))
 
 Chip::Chip(const Tang::ChipInfo &info) : info(info), cram(info.num_frames, info.bits_per_frame)
 {
-    vector<TileInfo> allTiles = get_device_tilegrid(DeviceLocator{info.family, info.name});
+    vector<TileInfo> allTiles = get_device_tilegrid(DeviceLocator{info.family, info.name, info.package});
     for (const auto &tile : allTiles) {
         tiles[tile.name] = make_shared<Tile>(tile, *this);
         int row, col;

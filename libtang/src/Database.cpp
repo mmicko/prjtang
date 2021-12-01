@@ -35,18 +35,20 @@ template<typename T>
 boost::optional<DeviceLocator> find_device_generic(T f) {
     for (const pt::ptree::value_type &family : devices_info.get_child("families")) {
         for (const pt::ptree::value_type &dev : family.second.get_child("devices")) {
-            bool res = f(dev.first, dev.second);
-            if (res)
-                return boost::make_optional(DeviceLocator{family.first, dev.first});
+            for (const pt::ptree::value_type &pkg : dev.second.get_child("packages")) {
+                bool res = f(dev.first, dev.second, pkg.first);
+                if (res)
+                    return boost::make_optional(DeviceLocator{family.first, dev.first, pkg.first});
+            }
         }
     }
     return boost::optional<DeviceLocator>();
 }
 
-DeviceLocator find_device_by_name(string name) {
-    auto found = find_device_generic([name](const string &n, const pt::ptree &p) -> bool {
+DeviceLocator find_device_by_name(string name, string package) {
+    auto found = find_device_generic([name, package](const string &n, const pt::ptree &p, const string &pk) -> bool {
         UNUSED(p);
-        return n == name;
+        return (n == name) && (pk == package);
     });
     if (!found)
         throw runtime_error("no device in database with name " + name);
@@ -54,10 +56,10 @@ DeviceLocator find_device_by_name(string name) {
 }
 
 DeviceLocator find_device_by_part(string part) {
-    auto found = find_device_generic([part](const string &n, const pt::ptree &p) -> bool {
+    auto found = find_device_generic([part](const string &n, const pt::ptree &p, const string &pk) -> bool {
         UNUSED(n);
-        for (const pt::ptree::value_type &package : p.get_child("packages")) {
-            if (package.second.get<string>("part") == part) return true;
+        for (const pt::ptree::value_type &pkg : p.get_child("packages")) {
+            if ((pkg.second.get<string>("part") == part) && (pkg.first == pk)) return true;
         }
         return false;
     });
@@ -73,10 +75,10 @@ uint32_t parse_uint32(string str) {
 }
 
 DeviceLocator find_device_by_idcode(uint32_t idcode) {
-    auto found = find_device_generic([idcode](const string &n, const pt::ptree &p) -> bool {
+    auto found = find_device_generic([idcode](const string &n, const pt::ptree &p, const string &pk) -> bool {
         UNUSED(n);
-        for (const pt::ptree::value_type &package : p.get_child("packages")) {
-            if (parse_uint32(package.second.get<string>("idcode")) == idcode) return true;
+        for (const pt::ptree::value_type &pkg : p.get_child("packages")) {
+            if ((parse_uint32(pkg.second.get<string>("idcode")) == idcode) && (pkg.first == pk)) return true;
         }
         return false;
     });
@@ -91,6 +93,7 @@ ChipInfo get_chip_info(const DeviceLocator &part) {
     ChipInfo ci;
     ci.family = part.family;
     ci.name = part.device;
+    ci.package = part.package;
     ci.num_frames = dev.get<int>("frames");
     ci.bits_per_frame = dev.get<int>("bits_per_frame");
     ci.bram_bits_per_frame = dev.get<int>("bram_bits_per_frame");

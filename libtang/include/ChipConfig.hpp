@@ -25,6 +25,7 @@ class ChipConfig
 {
 public:
     string chip_name;
+    string chip_package;
     vector<string> metadata;
     map<string, TileConfig> tiles;
     vector<TileGroup> tilegroups;

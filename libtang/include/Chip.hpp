@@ -17,6 +17,7 @@ struct ChipInfo
 {
     string name;
     string family;
+    string package;
     uint16_t num_frames;
     uint32_t bits_per_frame;
     uint32_t bram_bits_per_frame;
@@ -34,7 +35,7 @@ class Chip
 {
 public:
     // Construct a chip by looking up part name
-    explicit Chip(string name);
+    explicit Chip(string name, string package);
 
     // Construct a chip by looking up device ID
     explicit Chip(uint32_t idcode);
@@ -74,7 +75,6 @@ public:
     uint32_t cfg_ca;
     vector<string> metadata;
     uint32_t idcode;
-
 
     vector<vector<vector<pair<string, string>>>> tiles_at_location;
     // Block RAM initialisation
