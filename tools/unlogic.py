@@ -523,11 +523,24 @@ def decode_chipdb(argv):
 					sites.append({"name": "emb1", "type": "emb"})
 					sites.append({"name": "emb2", "type": "emb"})
 					sites.append({"name": "emb3", "type": "emb"})
+					sites.append({"name": "fifo0", "type": "fifo"})
+					sites.append({"name": "fifo1", "type": "fifo"})
+					sites.append({"name": "fifo2", "type": "fifo"})
+					sites.append({"name": "fifo3", "type": "fifo"})
 				if (unk[1] == "emb32k"):
 					sites.append({"name": "emb32k0", "type": "emb32k"})
 					sites.append({"name": "emb32k1", "type": "emb32k"})
+				if (unk[1] == "dsp"):
+					sites.append({"name": "mult0", "type": "mult18"})
+					sites.append({"name": "mult1", "type": "mult18"})
+					sites.append({"name": "mult2", "type": "mult18"})
+					sites.append({"name": "mult3", "type": "mult18"})
 				if (unk[1]=="config"):
 					sites.append({"name": "config", "type": "config"})
+				if (unk[1]=="osc"):
+					sites.append({"name": "osc", "type": "osc"})
+				if (unk[1]=="pwrmnt"):
+					sites.append({"name": "pwrmnt", "type": "pwrmnt"})
 				if (unk[1].startswith("pll") and unk[1]!="pll_matrix"):
 					sites.append({"name": "pll", "type": "pll"})
 				current_item["sites"] = sites
