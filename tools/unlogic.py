@@ -403,44 +403,63 @@ def decode_chipdb(argv):
 					"flag1": int(unk[6]),
 					"flag2": int(unk[7]),
 					"flag3": int(unk[8]),
-					"cnt": int(unk[11])
+					"cnt": int(unk[11]),
+					"expr": [],
+					"rpn": [],
+					"data": [],
 				}
 				assert(int(unk[6])==0 or int(unk[6])==1)
 				assert(int(unk[7])==0 or int(unk[7])==1)
 				assert(int(unk[8])==0 or int(unk[8])==1)
-				bits.append(current_item)
+
 				n1 = int(unk[9])
 				n2 = int(unk[10])
 				n3 = int(unk[11])
 				
+				expr = []
 				for l in range(n1):
 					unk,out  = decode(fp, [])
 					if(int(unk[0])>=10):
 						print_decrypt(chr(55+int(unk[0])))
+						expr.append(chr(55+int(unk[0])))
 					else:
 						print_decrypt(mapping[int(unk[0])])
+						expr.append(mapping[int(unk[0])])
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
 				assert len(empty)==0
+				
+				rpn = []
 				for l in range(n2):
 					unk,out  = decode(fp, [])
 					if(int(unk[0])>=10):
 						print_decrypt(chr(55+int(unk[0])))
+						rpn.append(chr(55+int(unk[0])))
 					else:
 						print_decrypt(mapping[int(unk[0])])
+						rpn.append(mapping[int(unk[0])])
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
 				assert len(empty)==0
 
+				data = dict()
 				for l in range(n3):
 					unk,out  = decode(fp, [1])
 					print_decrypt(chr(55+int(unk[0]))+" "+ unk[1])
+					data[chr(55+int(unk[0]))] = unk[1]
+				
+				current_item["expr"] = expr
+				current_item["rpn"] = rpn
+				current_item["data"] = data
+
+				bits.append(current_item)
+
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
 				assert len(empty)==0
 				
 			if "db_dir" in file_paths.keys():
-				json_file = os.path.join(file_paths["db_dir"], "bits", unk[0]+".json")
+				json_file = os.path.join(file_paths["db_dir"], "bits", bcc_name + ".json")
 				with open(json_file, "wt") as f:
 					json.dump(bits, f, indent=4)
 
