@@ -22,10 +22,9 @@ def main():
 		for device in devices["families"][family]["devices"].keys():
 			print("Device: " + device)
 			selected_device = devices["families"][family]["devices"][device]
-			os.mkdir(path.join("work_decrypt",device))
 			unc_file = path.join("work_decrypt", device + ".unc")
 			chipdb = path.join(tang_root, "arch", device + ".db") 
-			unlogic.decode_chipdb(["decrypt_all", chipdb, "--decrypt", unc_file, "--datadir", path.join("work_decrypt",device)])
+			unlogic.decode_chipdb(["decrypt_all", chipdb, "--decrypt", unc_file])
 
 if __name__ == "__main__":
 	main()

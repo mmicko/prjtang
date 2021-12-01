@@ -73,11 +73,9 @@ def decode_chipdb(argv):
 	parser.set_defaults(file_paths=dict())
 	parser.add_argument("dbfile", metavar="<db_file>.db>", nargs="?",
         help="Anlogic architecture .db file")
-	parser.add_argument("--tilegrid", metavar="<path_to_tilegrid_json>",
+	parser.add_argument("--db_dir", metavar="<path_to_database_directory>",
         action=DictAction, dest="file_paths")
 	parser.add_argument("--decrypt", metavar="<path_to_decrypted_file>",
-        action=DictAction, dest="file_paths")
-	parser.add_argument("--datadir", metavar="<path_to_data_directory>",
         action=DictAction, dest="file_paths")
 	args = parser.parse_args(argv[1:])	
 	dbfile = args.dbfile
@@ -390,66 +388,61 @@ def decode_chipdb(argv):
 			print_decrypt(out)
 			global bcc_info
 			bcc_name = unk[0]
-			with open(os.path.join(file_paths["datadir"],unk[0]+".json"), "wt") as f:
-				#print_decrypt_tofile(f, out)
-				k = int(unk[3])
-				bits = []
-				for j in range(k):
-					unk,out  = decode(fp, [0,1])
-					print_decrypt(out)
-					#print_decrypt_tofile(f, out)
-					current_item = {
-						"name": unk[0],
-						"type": unk[1],
-						"y": int(unk[2]),
-						"x": int(unk[3]),
-						"xoff": int(unk[4]),
-						"yoff": int(unk[5]),
-						"flag1": int(unk[6]),
-						"flag2": int(unk[7]),
-						"flag3": int(unk[8]),
-						"cnt": int(unk[11])
-					}
-					assert(int(unk[6])==0 or int(unk[6])==1)
-					assert(int(unk[7])==0 or int(unk[7])==1)
-					assert(int(unk[8])==0 or int(unk[8])==1)
-					bits.append(current_item)
-					n1 = int(unk[9])
-					n2 = int(unk[10])
-					n3 = int(unk[11])
-					
-					for l in range(n1):
-						unk,out  = decode(fp, [])
-						if(int(unk[0])>=10):
-							print_decrypt(chr(55+int(unk[0])))
-							#print_decrypt_tofile(f, chr(55+int(unk[0])))
-						else:
-							print_decrypt(mapping[int(unk[0])])
-							#print_decrypt_tofile(f,mapping[int(unk[0])])
-					empty,out  = decode(fp, [])
-					print_decrypt(out)
-					assert len(empty)==0
-					for l in range(n2):
-						unk,out  = decode(fp, [])
-						if(int(unk[0])>=10):
-							print_decrypt(chr(55+int(unk[0])))
-							#print_decrypt_tofile(f, chr(55+int(unk[0])))
-						else:
-							print_decrypt(mapping[int(unk[0])])
-							#print_decrypt_tofile(f,mapping[int(unk[0])])
-					empty,out  = decode(fp, [])
-					print_decrypt(out)
-					assert len(empty)==0
-
-					for l in range(n3):
-						unk,out  = decode(fp, [1])
-						print_decrypt(chr(55+int(unk[0]))+" "+ unk[1])
-						#print_decrypt_tofile(f, chr(55+int(unk[0]))+ " " + unk[1])
-					empty,out  = decode(fp, [])
-					print_decrypt(out)
-					assert len(empty)==0
+			k = int(unk[3])
+			bits = []
+			for j in range(k):
+				unk,out  = decode(fp, [0,1])
+				print_decrypt(out)
+				current_item = {
+					"name": unk[0],
+					"type": unk[1],
+					"y": int(unk[2]),
+					"x": int(unk[3]),
+					"xoff": int(unk[4]),
+					"yoff": int(unk[5]),
+					"flag1": int(unk[6]),
+					"flag2": int(unk[7]),
+					"flag3": int(unk[8]),
+					"cnt": int(unk[11])
+				}
+				assert(int(unk[6])==0 or int(unk[6])==1)
+				assert(int(unk[7])==0 or int(unk[7])==1)
+				assert(int(unk[8])==0 or int(unk[8])==1)
+				bits.append(current_item)
+				n1 = int(unk[9])
+				n2 = int(unk[10])
+				n3 = int(unk[11])
 				
-				json.dump(bits, f, indent=4)
+				for l in range(n1):
+					unk,out  = decode(fp, [])
+					if(int(unk[0])>=10):
+						print_decrypt(chr(55+int(unk[0])))
+					else:
+						print_decrypt(mapping[int(unk[0])])
+				empty,out  = decode(fp, [])
+				print_decrypt(out)
+				assert len(empty)==0
+				for l in range(n2):
+					unk,out  = decode(fp, [])
+					if(int(unk[0])>=10):
+						print_decrypt(chr(55+int(unk[0])))
+					else:
+						print_decrypt(mapping[int(unk[0])])
+				empty,out  = decode(fp, [])
+				print_decrypt(out)
+				assert len(empty)==0
+
+				for l in range(n3):
+					unk,out  = decode(fp, [1])
+					print_decrypt(chr(55+int(unk[0]))+" "+ unk[1])
+				empty,out  = decode(fp, [])
+				print_decrypt(out)
+				assert len(empty)==0
+				
+			if "db_dir" in file_paths.keys():
+				json_file = os.path.join(file_paths["db_dir"], "bits", unk[0]+".json")
+				with open(json_file, "wt") as f:
+					json.dump(bits, f, indent=4)
 
 
 			bcc_info[bcc_name] = bits
@@ -585,8 +578,9 @@ def decode_chipdb(argv):
 	if "decrypt" in file_paths.keys():
 		decrypt.close()
 
-	if "tilegrid" in file_paths.keys():
-		with open(file_paths["tilegrid"], "wt") as fout:
+	if "db_dir" in file_paths.keys():
+		json_file = os.path.join(file_paths["db_dir"], "tilegrid.json")
+		with open(json_file, "wt") as fout:
 			json.dump(tiles, fout, indent=4)
 
 if __name__ == '__main__':

@@ -235,23 +235,6 @@
                     "gap": 64
                 }
             }
-        },
-        "ph1": {
-            "devices": {
-                "ph1": {
-                    "packages": {
-                        "PH1A100SFG676":  { "part": "PH1A100SFG676",  "idcode": "0x00000000" },
-                        "PH1A100CGC324":  { "part": "PH1A100CGC324",  "idcode": "0x00000000" }
-                    },
-                    "max_col": 80,
-                    "max_row": 160,
-                    "frames": 3058,
-                    "bits_per_frame": 10368,
-                    "db_bits_per_frame": 10368,
-                    "bram_bits_per_frame": 9216,
-                    "gap": 64
-                }
-            }
         }
     }
 }

@@ -14,10 +14,8 @@ import unlogic
 def main():
 	devices = database.get_devices()
 	tang_root = database.get_tangdinasty_root()
-	if not path.exists(database.get_db_root()):
-		os.mkdir(database.get_db_root())
-	shutil.rmtree("work_decrypt", ignore_errors=True)
-	os.mkdir("work_decrypt")
+	shutil.rmtree(database.get_db_root(), ignore_errors=True)
+	os.mkdir(database.get_db_root())
 
 	shutil.copy(path.join(database.get_tang_root(), "devices.json"), path.join(database.get_db_root(), "devices.json"))
 
@@ -26,11 +24,12 @@ def main():
 		for device in devices["families"][family]["devices"].keys():
 			print("Device: " + device)
 			selected_device = devices["families"][family]["devices"][device]
-			os.mkdir(path.join("work_decrypt",device))
 
-			json_file = path.join(database.get_db_subdir(family, device), "tilegrid.json")
-			chipdb = path.join(tang_root, "arch", device + ".db") 
-			unlogic.decode_chipdb(["create_database", chipdb, "--tilegrid", json_file, "--datadir", path.join("work_decrypt",device)])
+			database_dir = database.get_db_subdir(family, device)
+			if not path.exists(path.join(database_dir,"bits")):
+				os.mkdir(path.join(database_dir,"bits"))
+			chipdb = path.join(tang_root, "arch", device + ".db")
+			unlogic.decode_chipdb(["create_database", chipdb, "--db_dir", database_dir])
 
 if __name__ == "__main__":
 	main()
