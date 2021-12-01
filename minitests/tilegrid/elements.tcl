@@ -6,4 +6,4 @@ legalize_phy_inst
 place
 route
 write_pnl eagle_s20.pnl
-bitgen -bit "eagle_s20.bit" -version 0X00 -g ucode:00000000000000000000000000000000 -info -log_file eagle_s20.log
+bitgen -bit "eagle_s20.bit" -version 0X00 -g ucode:000000000000000000000000 -info -log_file eagle_s20.log
