@@ -400,9 +400,9 @@ def decode_chipdb(argv):
 					"x": int(unk[3]),
 					"xoff": int(unk[4]),
 					"yoff": int(unk[5]),
-					"flag1": int(unk[6]),
-					"flag2": int(unk[7]),
-					"flag3": int(unk[8]),
+					"map_wire_arc": int(unk[6]), # maps wire or arc in expression
+					"remap": int(unk[7]),
+					"pll_info": int(unk[8]),
 					"cnt": int(unk[11]),
 					"expr": [],
 					"rpn": [],
@@ -411,7 +411,10 @@ def decode_chipdb(argv):
 				assert(int(unk[6])==0 or int(unk[6])==1)
 				assert(int(unk[7])==0 or int(unk[7])==1)
 				assert(int(unk[8])==0 or int(unk[8])==1)
-
+				if (unk[1]=="NONE"):
+					assert(int(unk[7])==0)
+				else:
+					assert(int(unk[7])==1)
 				n1 = int(unk[9])
 				n2 = int(unk[10])
 				n3 = int(unk[11])
@@ -553,7 +556,7 @@ def decode_chipdb(argv):
 					sites.append({"name": "osc", "type": "osc"})
 				if (unk[1]=="pwrmnt"):
 					sites.append({"name": "pwrmnt", "type": "pwrmnt"})
-				if (unk[1].startswith("pll") and unk[1]!="pll_matrix"):
+				if (unk[1]=="pll_matrix"):
 					sites.append({"name": "pll", "type": "pll"})
 				current_item["sites"] = sites
 				if (int(unk[8])==0):
