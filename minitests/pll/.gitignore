@@ -1,3 +1,4 @@
 *.bit
 *.log
+*.fuse
 *_tdroute.v
