@@ -41,13 +41,10 @@ string ChipConfig::to_string() const
     for (const auto &pll : pll_data) {
         ss << ".pll_init " << (int)pll.first << endl;
         ios_base::fmtflags f( ss.flags() );
-        for (size_t i = 0; i < pll.second.size(); i++) {
+        for (size_t i = 0; i < pll.second.size() / 32; i++) {
             ss << setw(2) << setfill('0') << hex << (int)pll.second.at(i);
-            if (i % 32 == 31)
-                ss << endl;
-            else
-                ss << " ";
         }
+        ss << endl;
         ss.flags(f);
         ss << endl;
     }
@@ -103,11 +100,15 @@ ChipConfig ChipConfig::from_string(const string &config)
             uint16_t pll;
             ss >> pll;
             ios_base::fmtflags f(ss.flags());
+            std::vector<uint8_t> data;
             while (!skip_check_eor(ss)) {
                 uint8_t value;
                 ss >> hex >> value;
-                cc.pll_data[pll].push_back(value);
+                data.push_back(value);
             }
+            cc.pll_data[pll].clear();
+            for(int i=0;i<32;i++)
+                cc.pll_data[pll].insert(cc.pll_data[pll].end(), data.begin(), data.end());
             ss.flags(f);
         } else if (verb == ".tile_group") {
             TileGroup tg;
