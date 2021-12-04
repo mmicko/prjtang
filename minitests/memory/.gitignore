@@ -1,0 +1,4 @@
+*.pnl
+*.bit
+*.log
+*_tdroute.v
