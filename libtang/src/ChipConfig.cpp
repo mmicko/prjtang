@@ -26,11 +26,24 @@ string ChipConfig::to_string() const
         }
     }
     for (const auto &bram : bram_data) {
-        ss << ".bram_init " << bram.first << endl;
+        ss << ".bram_init " << (int)bram.first << endl;
         ios_base::fmtflags f( ss.flags() );
         for (size_t i = 0; i < bram.second.size(); i++) {
-            ss << setw(3) << setfill('0') << hex << bram.second.at(i);
-            if (i % 8 == 7)
+            ss << setw(2) << setfill('0') << hex << (int)bram.second.at(i);
+            if (i % 32 == 31)
+                ss << endl;
+            else
+                ss << " ";
+        }
+        ss.flags(f);
+        ss << endl;
+    }
+    for (const auto &pll : pll_data) {
+        ss << ".pll_init " << (int)pll.first << endl;
+        ios_base::fmtflags f( ss.flags() );
+        for (size_t i = 0; i < pll.second.size(); i++) {
+            ss << setw(2) << setfill('0') << hex << (int)pll.second.at(i);
+            if (i % 32 == 31)
                 ss << endl;
             else
                 ss << " ";
@@ -81,9 +94,19 @@ ChipConfig ChipConfig::from_string(const string &config)
             ss >> bram;
             ios_base::fmtflags f(ss.flags());
             while (!skip_check_eor(ss)) {
-                uint16_t value;
+                uint8_t value;
                 ss >> hex >> value;
                 cc.bram_data[bram].push_back(value);
+            }
+            ss.flags(f);
+        } else if (verb == ".pll_init") {
+            uint16_t pll;
+            ss >> pll;
+            ios_base::fmtflags f(ss.flags());
+            while (!skip_check_eor(ss)) {
+                uint8_t value;
+                ss >> hex >> value;
+                cc.pll_data[pll].push_back(value);
             }
             ss.flags(f);
         } else if (verb == ".tile_group") {
@@ -111,6 +134,7 @@ Chip ChipConfig::to_chip() const
     Chip c(chip_name, chip_package);
     c.metadata = metadata;
     c.bram_data = bram_data;
+    c.pll_data = pll_data;
 
     if (sysconfig.count("cfg1")) 
         c.cfg1 = parse_uint32(sysconfig.at("cfg1"));
@@ -164,6 +188,7 @@ ChipConfig ChipConfig::from_chip(const Chip &chip)
     cc.chip_package = chip.info.package;
     cc.metadata = chip.metadata;
     cc.bram_data = chip.bram_data;
+    cc.pll_data = chip.pll_data;
     cc.sysconfig["cfg1"] = uint32_to_hexstr(chip.cfg1);
     cc.sysconfig["cfg2"] = uint32_to_hexstr(chip.cfg2);
     cc.sysconfig["cfg_c4"] = uint32_to_hexstr(chip.cfg_c4);

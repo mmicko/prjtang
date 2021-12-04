@@ -409,6 +409,7 @@ Chip Bitstream::deserialise_chip()
 
     Crc16 data_crc16;
     bool is_cpld = false;
+    uint8_t pll_index = 0x00;
 
     bool found_preamble = false;
     for(auto it = blocks.begin(); it != blocks.end(); ++it) {
@@ -566,21 +567,34 @@ Chip Bitstream::deserialise_chip()
                 break;
             }
             case BitstreamCommand::MEMORY_DATA: {
-                rd.get_uint16();
+                uint16_t type = rd.get_uint16();
                 uint8_t bram_block_id = rd.get_byte();
                 // taking current CRC16
                 data_crc16.crc16 = rd.crc16.crc16;
-                BITSTREAM_NOTE("bram_block_id 0x" << hex << setw(2) << setfill('0') << (int)bram_block_id);
+                if (type == 0x0001) {
+                    BITSTREAM_NOTE("pll");
+                } else {
+                    BITSTREAM_NOTE("bram_block_id 0x" << hex << setw(2) << setfill('0') << (int)bram_block_id);
+                }
                 uint16_t bram_bytes_per_frame = chip->info.bram_bits_per_frame / 8L;
                 unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bram_bytes_per_frame);
-                chip->bram_data[bram_block_id].resize(bram_bytes_per_frame);
+                if (type == 0x0001)
+                    chip->pll_data[pll_index].resize(bram_bytes_per_frame);
+                else
+                    chip->bram_data[bram_block_id].resize(bram_bytes_per_frame);
                 rd.get_bytes(frame_bytes.get(), bram_bytes_per_frame);
                 // Update CRC16 for complete frame
                 for (size_t i = 0; i < bram_bytes_per_frame; i++) {
                     data_crc16.update_crc16(frame_bytes[i]);
                 }
-                for(size_t i=0;i<bram_bytes_per_frame;i++)
-                    chip->bram_data[bram_block_id][i] = frame_bytes[i];
+                if (type == 0x0001) {
+                    for(size_t i=0;i<bram_bytes_per_frame;i++)
+                        chip->pll_data[pll_index][i] = frame_bytes[i];
+                    pll_index++;
+                } else {
+                    for(size_t i=0;i<bram_bytes_per_frame;i++)
+                        chip->bram_data[bram_block_id][i] = frame_bytes[i];
+                }
                 uint16_t actual_crc = data_crc16.finalise_crc16();
                 uint16_t exp_crc = rd.get_uint16(); // crc 
                 if (actual_crc != exp_crc) {

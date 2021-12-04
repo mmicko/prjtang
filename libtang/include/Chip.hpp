@@ -79,6 +79,8 @@ public:
     vector<vector<vector<pair<string, string>>>> tiles_at_location;
     // Block RAM initialisation
     map<uint8_t, vector<uint8_t>> bram_data;
+    // PLL data
+    map<uint8_t, vector<uint8_t>> pll_data;
 
     // Get max row and column
     int get_max_row() const;

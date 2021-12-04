@@ -33,6 +33,8 @@ public:
 
     // Block RAM initialisation
     map<uint8_t, vector<uint8_t>> bram_data;
+    // PLL data
+    map<uint8_t, vector<uint8_t>> pll_data;
 
     string to_string() const;
     static ChipConfig from_string(const string &config);
