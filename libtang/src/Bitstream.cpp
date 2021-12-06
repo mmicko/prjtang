@@ -36,9 +36,6 @@ enum class BitstreamCommand : uint8_t {
     CMD_AC = 0xac,
     CMD_B1 = 0xb1,
     CPLD_DATA = 0xaa,
-    DUMMY_FF = 0xff,
-    DUMMY_EE = 0xee,
-    DUMMY_00 = 0x00
 };
 
 class Crc16 {
@@ -110,12 +107,11 @@ public:
     }
 
     // The command opcode is a byte so this works like get_byte
-    inline BitstreamCommand get_command_opcode() {
+    inline uint8_t get_command_opcode() {
         assert(iter < data.end());
         uint8_t val = *(iter++);
-        BitstreamCommand cmd = BitstreamCommand(val);
         crc16.update_crc16(val);
-        return cmd;
+        return val;
     }
 
     // Write a single byte and update CRC
@@ -419,17 +415,20 @@ Chip Bitstream::deserialise_chip()
             continue;
         }
 
-        BitstreamCommand cmd = rd.get_command_opcode();
-
-        bool is_cpld_command = false;
-        switch(cmd) {
-            case BitstreamCommand::DUMMY_FF:
-            case BitstreamCommand::DUMMY_EE:
-            case BitstreamCommand::DUMMY_00:
+        uint8_t cmd_byte = rd.get_command_opcode();
+        switch(cmd_byte) {
+            case 0xff:
+            case 0xee:
+            case 0x00:
                 BITSTREAM_NOTE("padding block_size " << dec << it->size());
                 continue;
                 break;
+        }
 
+        // Add highest bit since old tools generate bitstreams with that bit low
+        BitstreamCommand cmd = BitstreamCommand(cmd_byte | 0x80);
+        bool is_cpld_command = false;
+        switch(cmd) {
             case BitstreamCommand::DEVICEID_CPLD:
             case BitstreamCommand::RESET_CRC_CPLD:
             case BitstreamCommand::CMD_A1:
@@ -714,7 +713,7 @@ void Bitstream::write_bmk(const Chip &chip, std::ostream &out) {
         out << meta << std::endl;
     }
     for(auto it = blocks.begin(); it != blocks.end(); ++it) {
-        if (it->at(0) == (uint8_t)BitstreamCommand::DUMMY_00) continue;
+        if (it->at(0) == 0x00) continue;
         uint16_t size = it->size() << 3;
         out << uint8_t(size >> 8) << uint8_t(size & 0xff);
         for (size_t pos = 0; pos < it->size(); pos++) {
@@ -743,7 +742,7 @@ void Bitstream::write_bma(const Chip &chip, std::ostream &out) {
         out << meta << std::endl;
     }
     for(auto it = blocks.begin(); it != blocks.end(); ++it) {
-        if (it->at(0) == (uint8_t)BitstreamCommand::DUMMY_00) continue;
+        if (it->at(0) == 0x00) continue;
         for (size_t pos = 0; pos < it->size(); pos++) {
             out << std::bitset<8>((*it)[pos]);
         }
