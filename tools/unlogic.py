@@ -450,7 +450,10 @@ def decode_chipdb(argv):
 					unk,out  = decode(fp, [1])
 					print_decrypt(chr(55+int(unk[0]))+" "+ unk[1])
 					data[chr(55+int(unk[0]))] = unk[1]
-				
+					# 'PROPERTY' 'ARCVAL' 'FALSE' 'COMP' 'MEMORY' 'SELECTOR' 'WIRE' 'PORTS' 'TRUE'
+					# always separate : FALSE, TRUE, MEMORY and SELECTOR
+					# can be with other in group: PROPERTY, ARCVAL, COMP, WIRE and PORTS
+
 				current_item["expr"] = expr
 				current_item["rpn"] = rpn
 				current_item["data"] = data
