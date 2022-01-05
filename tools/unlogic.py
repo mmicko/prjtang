@@ -390,14 +390,15 @@ def decode_chipdb(argv):
 			bcc_name = unk[0]
 			k = int(unk[3])
 			bits = []
+			tiles_addressed = dict()
 			for j in range(k):
 				unk,out  = decode(fp, [0,1])
 				print_decrypt(out)
 				current_item = {
 					"name": unk[0],
 					"type": unk[1],
-					"y": int(unk[2]),
-					"x": int(unk[3]),
+					"frame": int(unk[2]),
+					"bit": int(unk[3]),
 					"xoff": int(unk[4]),
 					"yoff": int(unk[5]),
 					"map_wire_arc": int(unk[6]), # maps wire or arc in expression
@@ -408,6 +409,7 @@ def decode_chipdb(argv):
 					"rpn": [],
 					"data": [],
 				}
+				tiles_addressed[unk[4]+","+unk[5]] = 1
 				assert(int(unk[6])==0 or int(unk[6])==1)
 				assert(int(unk[7])==0 or int(unk[7])==1)
 				assert(int(unk[8])==0 or int(unk[8])==1)
@@ -450,6 +452,26 @@ def decode_chipdb(argv):
 					unk,out  = decode(fp, [1])
 					print_decrypt(chr(55+int(unk[0]))+" "+ unk[1])
 					data[chr(55+int(unk[0]))] = unk[1]
+					operation = ""
+					if ("(" in unk[1]):
+						sub = unk[1].split("(")
+						operation = sub[0]
+					else:
+						operation = unk[1]
+					#if (operation=="SELECTOR"):
+					#	print(unk[1].replace("SELECTOR(","").replace(")",""))
+					#if (operation=="PROPERTY"):
+					#	print(unk[1].replace("PROPERTY(","").replace(")",""))
+					#if (operation=="MEMORY"):
+					#	print(unk[1].replace("MEMORY(","").replace(")",""))
+					#if (operation=="ARCVAL"):
+					#	print(unk[1].replace("ARCVAL(","").replace(")",""))
+					#if (operation=="WIRE"):
+					#	print(unk[1].replace("WIRE(","").replace(")",""))
+					#if (operation=="PORTS"):
+					#	print(unk[1].replace("PORTS(","").replace(")",""))
+					#if (operation=="COMP"):
+					#	print(unk[1].replace("COMP(","").replace(")",""))
 					# 'PROPERTY' 'ARCVAL' 'FALSE' 'COMP' 'MEMORY' 'SELECTOR' 'WIRE' 'PORTS' 'TRUE'
 					# always separate : FALSE, TRUE, MEMORY and SELECTOR
 					# can be with other in group: PROPERTY, ARCVAL, COMP, WIRE and PORTS
@@ -463,6 +485,9 @@ def decode_chipdb(argv):
 				empty,out  = decode(fp, [])
 				print_decrypt(out)
 				assert len(empty)==0
+
+			#if len(tiles_addressed)>1:
+			#	print(bcc_name, len(tiles_addressed))
 				
 			if "db_dir" in file_paths.keys():
 				json_file = os.path.join(file_paths["db_dir"], "bits", bcc_name + ".json")
