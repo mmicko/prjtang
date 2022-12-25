@@ -592,8 +592,7 @@ def decode_chipdb(argv):
 					assert(int(unk[5])==0)
 					assert(int(unk[6])==0)
 					assert(int(unk[7])==0)
-				if (int(unk[8])==-1):
-					info[y][x][unk[1]] = current_item
+				info[y][x][unk[1]] = current_item
 				inst[unk[0]] = current_item
 				tiles[unk[0]] = current_item
 				empty,out  = decode(fp, [])
