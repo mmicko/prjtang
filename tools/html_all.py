@@ -9,6 +9,7 @@ from string import Template
 import database
 import json
 import html_tilegrid
+import html_bits
 import shutil
 
 tang_docs_index = """
@@ -52,6 +53,7 @@ def main():
 			print("Device: " + device)
 			docs_toc += '<li><a href="{}">{} Documentation</a></li>'.format('{}.html'.format(device),device.upper())
 			html_tilegrid.main(["html_tilegrid", family,  device, path.join("work_html",device + ".html")])
+			html_bits.main(["html_bits", family,  device, path.join("work_html",device + "_bits.html")])
 		docs_toc += "</ul>"
 	index_html = Template(tang_docs_index).substitute(
 		datetime=build_dt,
