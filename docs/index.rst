@@ -14,3 +14,4 @@ to develop a free and open Verilog to bitstream toolchain for these devices.
    :caption: Anlogic FPGA Architecture
 
    architecture/bitstream_format
+   architecture/fuse_database
