@@ -361,6 +361,41 @@ Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::st
     blocks = rd.get_blocks();
 }
 
+// CRC-32/MPEG-2 (poly 0x04C11DB7, init 0xFFFFFFFF, not reflected, no final xor)
+static uint32_t update_crc32(uint32_t crc, const std::vector<uint8_t> &bytes)
+{
+    for (uint8_t val : bytes) {
+        crc ^= uint32_t(val) << 24;
+        for (int i = 0; i < 8; i++)
+            crc = (crc & 0x80000000) ? ((crc << 1) ^ 0x04C11DB7) : (crc << 1);
+    }
+    return crc;
+}
+
+// BIT files made by TD 5.x have two 32 bit CRC values in header, written
+// as binary numbers starting with least significant bit. "Bitstream CRC"
+// covers content of all blocks, and "Transfer CRC" all data after header
+// (blocks including their size fields). TD does not download file when
+// they are not correct.
+void Bitstream::update_metadata_crc()
+{
+    uint32_t bitstream_crc = 0xFFFFFFFF;
+    for (const auto &block : blocks)
+        bitstream_crc = update_crc32(bitstream_crc, block);
+    uint32_t transfer_crc = update_crc32(0xFFFFFFFF, data);
+
+    auto update = [](std::string &line, const std::string &prefix, uint32_t crc) {
+        if (line.compare(0, prefix.size(), prefix) != 0 || line.size() != prefix.size() + 32)
+            return; // older TD versions have 16 bit value of different kind
+        for (int i = 0; i < 32; i++)
+            line[prefix.size() + i] = ((crc >> i) & 1) ? '1' : '0';
+    };
+    for (auto &line : metadata) {
+        update(line, "# Bitstream CRC: ", bitstream_crc);
+        update(line, "# Transfer CRC: ", transfer_crc);
+    }
+}
+
 Bitstream Bitstream::read(std::istream &in)
 {
     std::vector<uint8_t> bytes;
@@ -956,7 +991,9 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
     // One empty block for each of four PLLs that is not used
     for (size_t i = chip.pll_data.size(); i < 4; i++)
         wr.insert_dummy_block(0x00, 1162);
-    return Bitstream(wr.get(), chip.metadata);
+    Bitstream bitstream(wr.get(), chip.metadata);
+    bitstream.update_metadata_crc();
+    return bitstream;
 }
 
 void Bitstream::write_fuse(const Chip &chip, std::ostream &out)

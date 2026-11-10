@@ -70,6 +70,23 @@ First three blocks are presenting bitstream start signature. Data also finish wi
 
 CRC algorithm used is: CRC-16/BUYPASS
 
+Header of files made by TD 5.6
+------------------------------
+
+TD 5.6 writes two 32 bit CRC values in comment section, and it does not download file where they are wrong:
+
+.. code-block:: none
+
+  # Bitstream CRC: 11001010010000000010010110011100
+  # USER CODE: 00000000001000010000101000100001
+  # Transfer CRC: 10111110010100000000111111011011
+
+Both are CRC-32/MPEG-2 (polynomial 0x04C11DB7, initial value 0xFFFFFFFF, not reflected, no final XOR),
+written as binary number starting with least significant bit.
+
+* ``Bitstream CRC`` is calculated over data of all blocks (without 16 bit size values).
+* ``Transfer CRC`` is calculated over everything after comment section (blocks with their size values).
+
 Block RAM and PLL data
 ----------------------
 
