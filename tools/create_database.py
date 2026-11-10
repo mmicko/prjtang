@@ -25,10 +25,14 @@ def main():
 			print("Device: " + device)
 			selected_device = devices["families"][family]["devices"][device]
 
+			chipdb = path.join(tang_root, "arch", device + ".db")
+			if not path.exists(chipdb):
+				print("  not found in this TD version, skipping")
+				continue
+
 			database_dir = database.get_db_subdir(family, device)
 			if not path.exists(path.join(database_dir,"bits")):
 				os.mkdir(path.join(database_dir,"bits"))
-			chipdb = path.join(tang_root, "arch", device + ".db")
 			unlogic.decode_chipdb(["create_database", chipdb, "--db_dir", database_dir])
 
 if __name__ == "__main__":
