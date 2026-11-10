@@ -70,6 +70,49 @@ First three blocks are presenting bitstream start signature. Data also finish wi
 
 CRC algorithm used is: CRC-16/BUYPASS
 
+Header of files made by TD 5.6
+------------------------------
+
+TD 5.6 writes two 32 bit CRC values in comment section, and it does not download file where they are wrong:
+
+.. code-block:: none
+
+  # Bitstream CRC: 11001010010000000010010110011100
+  # USER CODE: 00000000001000010000101000100001
+  # Transfer CRC: 10111110010100000000111111011011
+
+Both are CRC-32/MPEG-2 (polynomial 0x04C11DB7, initial value 0xFFFFFFFF, not reflected, no final XOR),
+written as binary number starting with least significant bit.
+
+* ``Bitstream CRC`` is calculated over data of all blocks (without 16 bit size values).
+* ``Transfer CRC`` is calculated over everything after comment section (blocks with their size values).
+
+Block RAM and PLL data
+----------------------
+
+After last frame there is one block of 15 zeros, and then one block for each block RAM that has
+content and for each PLL that is used. They come before ``Done`` command.
+
++---------+------+----+----------------------------+-------+----------+
+| Command | Type | Id | Data                       | CRC   | Padding  |
++=========+======+====+============================+=======+==========+
+| ed      | 0000 | 04 | BYTES_PER_MEM_FRAME bytes  | xxxx  | 00000000 |
++---------+------+----+----------------------------+-------+----------+
+| ed      | 0001 | 00 | BYTES_PER_MEM_FRAME bytes  | xxxx  | 00000000 |
++---------+------+----+----------------------------+-------+----------+
+
+Type 0000 is content of block RAM with given id, and type 0001 is configuration of PLL with given number.
+CRC is calculated from start of block.
+
+PLL configuration is 32 words of 9 bits (36 bytes), repeated to fill the block. Fuse of ``pll_matrix`` tile
+at frame ``f`` and bit ``b`` in database is bit ``9 * f + 8 - b`` of it, counting from most significant
+bit of first byte.
+
+File finish with two all-ff blocks and after them one block of zeros (BYTES_PER_MEM_FRAME + 10 bytes)
+for each PLL that is not used (EG4 have four PLLs, so there are four such blocks when no PLL is used).
+
+Checked with TD 5.6.5 on EG4S20NG88.
+
 
 
 Family : AL3

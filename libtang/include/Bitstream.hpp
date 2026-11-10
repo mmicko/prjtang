@@ -41,6 +41,8 @@ class Bitstream
     Bitstream(const std::vector<uint8_t> &data, const std::vector<std::string> &metadata);
 
     std::string vector_to_string(const std::vector<uint8_t> &data);
+    // Recalculate CRC values kept in BIT file metadata
+    void update_metadata_crc();
     // Bitstream data parsed into blocks
     std::vector<uint8_t> data;
     std::vector<std::vector<uint8_t>> blocks;

@@ -361,6 +361,41 @@ Bitstream::Bitstream(const std::vector<uint8_t> &data, const std::vector<std::st
     blocks = rd.get_blocks();
 }
 
+// CRC-32/MPEG-2 (poly 0x04C11DB7, init 0xFFFFFFFF, not reflected, no final xor)
+static uint32_t update_crc32(uint32_t crc, const std::vector<uint8_t> &bytes)
+{
+    for (uint8_t val : bytes) {
+        crc ^= uint32_t(val) << 24;
+        for (int i = 0; i < 8; i++)
+            crc = (crc & 0x80000000) ? ((crc << 1) ^ 0x04C11DB7) : (crc << 1);
+    }
+    return crc;
+}
+
+// BIT files made by TD 5.x have two 32 bit CRC values in header, written
+// as binary numbers starting with least significant bit. "Bitstream CRC"
+// covers content of all blocks, and "Transfer CRC" all data after header
+// (blocks including their size fields). TD does not download file when
+// they are not correct.
+void Bitstream::update_metadata_crc()
+{
+    uint32_t bitstream_crc = 0xFFFFFFFF;
+    for (const auto &block : blocks)
+        bitstream_crc = update_crc32(bitstream_crc, block);
+    uint32_t transfer_crc = update_crc32(0xFFFFFFFF, data);
+
+    auto update = [](std::string &line, const std::string &prefix, uint32_t crc) {
+        if (line.compare(0, prefix.size(), prefix) != 0 || line.size() != prefix.size() + 32)
+            return; // older TD versions have 16 bit value of different kind
+        for (int i = 0; i < 32; i++)
+            line[prefix.size() + i] = ((crc >> i) & 1) ? '1' : '0';
+    };
+    for (auto &line : metadata) {
+        update(line, "# Bitstream CRC: ", bitstream_crc);
+        update(line, "# Transfer CRC: ", transfer_crc);
+    }
+}
+
 Bitstream Bitstream::read(std::istream &in)
 {
     std::vector<uint8_t> bytes;
@@ -577,6 +612,10 @@ Chip Bitstream::deserialise_chip()
                 }
                 uint16_t bram_bytes_per_frame = chip->info.bram_bits_per_frame / 8L;
                 unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bram_bytes_per_frame);
+                // PLL block has number of PLL in place of block id, if same
+                // number is seen again fall back to counting the blocks
+                if (type == 0x0001 && !chip->pll_data.count(bram_block_id))
+                    pll_index = bram_block_id;
                 if (type == 0x0001)
                     chip->pll_data[pll_index].resize(bram_bytes_per_frame);
                 else
@@ -922,14 +961,39 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
         crc16 = CRC16_INIT;
     }
     wr.insert_dummy_block(0x00, 15);
+    // Block RAM initialisation data
+    for (const auto &bram : chip.bram_data) {
+        BlockReadWriter blk;
+        blk.crc16.reset_crc16();
+        blk.write_byte((uint8_t)BitstreamCommand::MEMORY_DATA);
+        blk.write_uint16(0x0000);
+        blk.write_byte(bram.first);
+        blk.write_bytes(bram.second.begin(), bram.second.size());
+        blk.insert_crc16();
+        blk.write_uint32(0);
+        wr.write_block(blk.get());
+    }
+    // PLL configuration data
+    for (const auto &pll : chip.pll_data) {
+        BlockReadWriter blk;
+        blk.crc16.reset_crc16();
+        blk.write_byte((uint8_t)BitstreamCommand::MEMORY_DATA);
+        blk.write_uint16(0x0001);
+        blk.write_byte(pll.first);
+        blk.write_bytes(pll.second.begin(), pll.second.size());
+        blk.insert_crc16();
+        blk.write_uint32(0);
+        wr.write_block(blk.get());
+    }
     wr.insert_cmd_uint16(BitstreamCommand::PROGRAM_DONE, 0x0000);
     wr.insert_dummy_block(0xff, 16);
     wr.insert_dummy_block(0xff, 16);
-    wr.insert_dummy_block(0x00, 1162);
-    wr.insert_dummy_block(0x00, 1162);
-    wr.insert_dummy_block(0x00, 1162);
-    wr.insert_dummy_block(0x00, 1162);
-    return Bitstream(wr.get(), chip.metadata);
+    // One empty block for each of four PLLs that is not used
+    for (size_t i = chip.pll_data.size(); i < 4; i++)
+        wr.insert_dummy_block(0x00, 1162);
+    Bitstream bitstream(wr.get(), chip.metadata);
+    bitstream.update_metadata_crc();
+    return bitstream;
 }
 
 void Bitstream::write_fuse(const Chip &chip, std::ostream &out)
