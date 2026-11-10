@@ -577,6 +577,10 @@ Chip Bitstream::deserialise_chip()
                 }
                 uint16_t bram_bytes_per_frame = chip->info.bram_bits_per_frame / 8L;
                 unique_ptr<uint8_t[]> frame_bytes = make_unique<uint8_t[]>(bram_bytes_per_frame);
+                // PLL block has number of PLL in place of block id, if same
+                // number is seen again fall back to counting the blocks
+                if (type == 0x0001 && !chip->pll_data.count(bram_block_id))
+                    pll_index = bram_block_id;
                 if (type == 0x0001)
                     chip->pll_data[pll_index].resize(bram_bytes_per_frame);
                 else
@@ -922,13 +926,36 @@ Bitstream Bitstream::serialise_chip(const Chip &chip, const map<string, string>)
         crc16 = CRC16_INIT;
     }
     wr.insert_dummy_block(0x00, 15);
+    // Block RAM initialisation data
+    for (const auto &bram : chip.bram_data) {
+        BlockReadWriter blk;
+        blk.crc16.reset_crc16();
+        blk.write_byte((uint8_t)BitstreamCommand::MEMORY_DATA);
+        blk.write_uint16(0x0000);
+        blk.write_byte(bram.first);
+        blk.write_bytes(bram.second.begin(), bram.second.size());
+        blk.insert_crc16();
+        blk.write_uint32(0);
+        wr.write_block(blk.get());
+    }
+    // PLL configuration data
+    for (const auto &pll : chip.pll_data) {
+        BlockReadWriter blk;
+        blk.crc16.reset_crc16();
+        blk.write_byte((uint8_t)BitstreamCommand::MEMORY_DATA);
+        blk.write_uint16(0x0001);
+        blk.write_byte(pll.first);
+        blk.write_bytes(pll.second.begin(), pll.second.size());
+        blk.insert_crc16();
+        blk.write_uint32(0);
+        wr.write_block(blk.get());
+    }
     wr.insert_cmd_uint16(BitstreamCommand::PROGRAM_DONE, 0x0000);
     wr.insert_dummy_block(0xff, 16);
     wr.insert_dummy_block(0xff, 16);
-    wr.insert_dummy_block(0x00, 1162);
-    wr.insert_dummy_block(0x00, 1162);
-    wr.insert_dummy_block(0x00, 1162);
-    wr.insert_dummy_block(0x00, 1162);
+    // One empty block for each of four PLLs that is not used
+    for (size_t i = chip.pll_data.size(); i < 4; i++)
+        wr.insert_dummy_block(0x00, 1162);
     return Bitstream(wr.get(), chip.metadata);
 }
 
