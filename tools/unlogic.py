@@ -61,6 +61,22 @@ def decode_skip(fp, ids):
 	out = " ".join(items)
 	return items,out
 
+class LineReader:
+	def __init__(self, fp):
+		self.fp = fp
+		self.lineno = 0
+		self.last = ""
+		self.pushed = False
+	def readline(self):
+		if self.pushed:
+			self.pushed = False
+			return self.last
+		self.lineno += 1
+		self.last = self.fp.readline()
+		return self.last
+	def unread(self):
+		self.pushed = True
+
 class DictAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         assert isinstance(getattr(namespace, self.dest), dict), "Use ArgumentParser.set_defaults() to initialize {} to dict()".format(self.dest)
@@ -96,6 +112,7 @@ def decode_chipdb(argv):
 	keypos = 0
 	key = ""
 	is_ph1 = False
+	new_format = False
 	tiles = dict()
 
 	if "decrypt" in file_paths.keys():
@@ -104,18 +121,34 @@ def decode_chipdb(argv):
 	with open(dbfile) as fp:
 		global info
 		info = []
+		fp = LineReader(fp)
 		# First line contain encryption key
-		items, out  = decode(fp, [])
-		print_decrypt(out)
-
-		key = items[1]
-		arch = int(items[2])
-		if (key=="ph1_100"):
-			is_ph1 = True
+		items = fp.readline().split()
+		if len(items) == 3:
+			# old format: "<n> <key> <arch count>", key is plain text
+			print_decrypt(" ".join(items))
+			key = items[1]
+			arch = int(items[2])
+			is_ph1 = (key=="ph1_100")
+		else:
+			# new format (TD 5.6): fixed key, family name encrypted on
+			# first line, arch count on its own line
+			key = "DeviceEncoding"
+			items, out = decode_items(items, [0])
+			print_decrypt(out)
+			is_ph1 = items[0].startswith("ph1")
+			items, out = decode(fp, [])
+			print_decrypt(out)
+			arch = int(items[0])
+			new_format = True
 
 		for i in range(arch):
 			# arch names
 			items,out  = decode(fp, [0])			
+			print_decrypt(out)
+		if new_format:
+			# name of device this file is for
+			items,out  = decode(fp, [0])
 			print_decrypt(out)
 		for i in range(arch):
 			# eagle_20 NONE NONE 8 8 41 72 2450 64 29 16 0 2
@@ -162,7 +195,19 @@ def decode_chipdb(argv):
 			for k in range(int(blk[1])):
 				blocks,out  = decode(fp, [])
 				print_decrypt(out)
-				for j in range(3,49):
+				num_types = 46
+				num_extra = 0
+				if new_format:
+					# header is split over three lines
+					unk,out  = decode(fp, [])
+					print_decrypt(out)
+					unk,out  = decode(fp, [])
+					print_decrypt(out)
+					num_types = int(unk[4])
+					num_extra = int(unk[5])
+				else:
+					num_extra = int(blocks[8])
+				for j in range(3,3+num_types):
 					unk,out  = decode(fp, [])
 					print_decrypt(out)
 					assert int(unk[0])==j
@@ -176,7 +221,7 @@ def decode_chipdb(argv):
 						for k in range(int(items[l])):
 							dummy,out  = decode(fp, [0])
 							print_decrypt(out)
-				for k in range(int(blocks[8])):
+				for k in range(num_extra):
 					items,out  = decode(fp, [])
 					print_decrypt(out)
 
@@ -216,7 +261,18 @@ def decode_chipdb(argv):
 			for j in range(num):
 				unk,out  = decode_skip(fp, [1])
 				print_decrypt(out)
-		for i in range(19 if is_ph1 else 9):
+		i = 0
+		while True:
+			if new_format and not is_ph1:
+				# number of groups is not fixed, they last until
+				# single item line starting next section
+				unk = fp.readline().split()
+				fp.unread()
+				if len(unk) != 5:
+					break
+			elif i == (19 if is_ph1 else 9):
+				break
+			i += 1
 			unk,out  = decode(fp, [])
 			assert(0 == int(unk[0]))
 			assert(0 == int(unk[1]))
@@ -286,26 +342,40 @@ def decode_chipdb(argv):
 		for k in range(int(blocks[0])):
 			blocks,out  = decode(fp, [])
 			print_decrypt(out)
-			for i in range(int(blocks[1])):
+			num_sub = int(blocks[1])
+			if new_format:
+				# count is on separate line
+				blocks,out  = decode(fp, [])
+				print_decrypt(out)
+				num_sub = int(blocks[0])
+			for i in range(num_sub):
 				blocks,out  = decode(fp, [])
 				print_decrypt(out)
 				for j in range(int(blocks[1])):
 					unk,out  = decode(fp, [0])
 					print_decrypt(out)
-					if (int(unk[2])==1):
-						unk,out  = decode(fp, [1])
-					elif (int(unk[2])==2):
-						unk,out  = decode(fp, [1,5])
-					elif (int(unk[2])==3):
-						unk,out  = decode(fp, [1,5,9])
-					print_decrypt(out)
+					ids = []
+					for g in range(int(unk[2])):
+						if new_format:
+							ids += [g*5+1, g*5+2]
+						else:
+							ids += [g*4+1]
+					if len(ids) > 0:
+						unk,out  = decode(fp, ids)
+						print_decrypt(out)
 
 		# architecture
-		blocks,out  = decode(fp, [])
-		print_decrypt(out)
-		for i in range(int(blocks[0])):
-			unk,out  = decode_skip(fp, [0])
+		while True:
+			blocks,out  = decode(fp, [])
 			print_decrypt(out)
+			for i in range(int(blocks[0])):
+				unk,out  = decode_skip(fp, [0])
+				print_decrypt(out)
+			# new format can have more than one table here
+			unk = fp.readline().split()
+			fp.unread()
+			if not (new_format and len(unk) == 1 and unk[0].isdigit()):
+				break
 
 		# xml
 		blocks,out  = decode(fp, [])
@@ -321,7 +391,16 @@ def decode_chipdb(argv):
 		# timing lib
 		blocks,out  = decode(fp, [0])
 		print_decrypt(out)
-		assert blocks[0]=="TimingLib"
+		if new_format:
+			assert blocks[0].startswith("timing")
+			# number of timing libs
+			unk,out  = decode(fp, [])
+			print_decrypt(out)
+			assert int(unk[0])==1
+			blocks,out  = decode(fp, [0])
+			print_decrypt(out)
+		else:
+			assert blocks[0]=="TimingLib"
 		for i in range(int(blocks[1])):
 			unk,out  = decode(fp, [0,1])
 			print_decrypt(out)
@@ -356,7 +435,30 @@ def decode_chipdb(argv):
 			assert len(empty)==0
 
 		items = fp.readline().split()
-		if len(items)==0:
+		if new_format:
+			# plain number pairs until empty line
+			while len(items)!=0:
+				print_decrypt(" ".join(items))
+				items = fp.readline().split()
+			print_decrypt("")
+			# tables, each line is single encoded item
+			num,out  = decode(fp, [])
+			print_decrypt(out)
+			for i in range(int(num[0])):
+				unk,out  = decode(fp, [0])
+				print_decrypt(out)
+				unk,out  = decode(fp, [])
+				print_decrypt(out)
+				for j in range(4):
+					cnt,out  = decode(fp, [])
+					print_decrypt(out)
+					for k in range(int(cnt[0])):
+						unk,out  = decode_skip(fp, [])
+						print_decrypt(out)
+			empty,out  = decode(fp, [])
+			assert len(empty)==0
+			print_decrypt(out)
+		elif len(items)==0:
 			empty,out  = decode_items(items, [])
 			assert len(empty)==0
 			print_decrypt(out)
